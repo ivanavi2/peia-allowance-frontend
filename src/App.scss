@@ -1,1 +1,18 @@
+.layout-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: blue orange;
+}
 
+/* Works on Chrome, Edge, and Safari */
+.layout-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.layout-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.layout-sidebar::-webkit-scrollbar-thumb {
+    background-color: #707c8ca9;
+    border-radius: 20px;
+}
