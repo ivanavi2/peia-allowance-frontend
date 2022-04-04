@@ -4,14 +4,21 @@ import ReactDOM from "react-dom";
 import App from "./App";
 //import * as serviceWorker from './serviceWorker';
 import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { ReactQueryDevtools } from "react-query/devtools";
 import ScrollToTop from "./ScrollToTop";
 
+const queryClient = new QueryClient();
+
 ReactDOM.render(
-    <BrowserRouter>
-        <ScrollToTop>
-            <App></App>
-        </ScrollToTop>
-    </BrowserRouter>,
+    <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+            <ScrollToTop>
+                <App></App>
+            </ScrollToTop>
+        </BrowserRouter>
+        <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>,
     document.getElementById("root")
 );
 

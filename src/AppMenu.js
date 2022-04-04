@@ -53,12 +53,16 @@ const AppSubmenu = (props) => {
         );
     };
 
+    const getActiveNavLinkClassName = ({ isActive }) => {
+        return isActive ? "router-link-active router-link-exact-active p-ripple" : "p-ripple";
+    };
+
     const renderLink = (item, i) => {
         let content = renderLinkContent(item);
 
         if (item.to) {
             return (
-                <NavLink aria-label={item.label} onKeyDown={onKeyDown} role="menuitem" className="p-ripple" activeClassName="router-link-active router-link-exact-active" to={item.to} onClick={(e) => onMenuItemClick(e, item, i)} exact target={item.target}>
+                <NavLink aria-label={item.label} onKeyDown={onKeyDown} role="menuitem" className={getActiveNavLinkClassName} to={item.to} onClick={(e) => onMenuItemClick(e, item, i)} target={item.target}>
                     {content}
                 </NavLink>
             );

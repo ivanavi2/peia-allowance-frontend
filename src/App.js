@@ -26,7 +26,8 @@ import IconsDemo from "./components/IconsDemo";
 import Crud from "./pages/Crud";
 import EmptyPage from "./pages/EmptyPage";
 import TimelineDemo from "./pages/TimelineDemo";
-import AddAllowanceClaim from "./pages/AddAllowanceClaim";
+import CreateAllowanceClaim from "./pages/CreateAllowanceClaim";
+import ViewAllAllowanceClaim from "./pages/ViewAllAllowanceClaim";
 
 import PublicLayout from "./layouts/PublicLayout";
 
@@ -36,7 +37,8 @@ const App = () => {
             <Route path="/login" element={<PublicLayout />} />
             <Route path="/" element={<AdminLayout />}>
                 <Route index element={<Dashboard />} />
-                <Route path="/addAllowanceClaim" element={<AddAllowanceClaim />} />
+                <Route path="/createAllowanceClaim" element={<CreateAllowanceClaim />} />
+                <Route path="/viewAllAllowanceClaim" element={<ViewAllAllowanceClaim />} />
                 <Route path="/formlayout" element={<FormLayoutDemo />} />
                 <Route path="/input" element={<InputDemo />} />
                 <Route path="/floatlabel" element={<FloatLabelDemo />} />

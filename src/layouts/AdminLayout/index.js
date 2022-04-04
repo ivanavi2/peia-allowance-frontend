@@ -146,9 +146,10 @@ const AdminLayout = () => {
             label: "UI Components",
             icon: "pi pi-fw pi-sitemap",
             items: [
-                { label: "Add Allowance Claim", icon: "fa-solid fa-file-signature", to: "/addAllowanceClaim" },
-                { label: "Form Layout", icon: "pi pi-fw pi-id-card", to: "/formlayout" },
-                { label: "Input", icon: "pi pi-fw pi-check-square", to: "/input" },
+                { label: "Create Allowance Claim", icon: "fa-solid fa-file-signature", to: "/createAllowanceClaim" },
+                { label: "View All Allowance Claim", icon: "fa-solid fa-file-lines", to: "/viewAllAllowanceClaim" },
+                /*                { label: "Form Layout", icon: "pi pi-fw pi-id-card", to: "/formlayout" },
+               { label: "Input", icon: "pi pi-fw pi-check-square", to: "/input" },
                 { label: "Float Label", icon: "pi pi-fw pi-bookmark", to: "/floatlabel" },
                 { label: "Invalid State", icon: "pi pi-fw pi-exclamation-circle", to: "invalidstate" },
                 { label: "Button", icon: "pi pi-fw pi-mobile", to: "/button" },
@@ -162,10 +163,10 @@ const AdminLayout = () => {
                 { label: "Message", icon: "pi pi-fw pi-comment", to: "/messages" },
                 { label: "File", icon: "pi pi-fw pi-file", to: "/file" },
                 { label: "Chart", icon: "pi pi-fw pi-chart-bar", to: "/chart" },
-                { label: "Misc", icon: "pi pi-fw pi-circle-off", to: "/misc" },
+                { label: "Misc", icon: "pi pi-fw pi-circle-off", to: "/misc" }, */
             ],
         },
-        {
+        /*       {
             label: "UI Blocks",
             items: [
                 { label: "Free Blocks", icon: "pi pi-fw pi-eye", to: "/blocks", badge: "NEW" },
@@ -255,7 +256,7 @@ const AdminLayout = () => {
                     },
                 },
             ],
-        },
+        }, */
     ];
 
     const addClass = (element, className) => {
@@ -283,7 +284,13 @@ const AdminLayout = () => {
         <div className={wrapperClass} onClick={onWrapperClick}>
             <Tooltip ref={copyTooltipRef} target=".block-action-copy" position="bottom" content="Copied to clipboard" event="focus" />
 
-            <AppTopbar onToggleMenuClick={onToggleMenuClick} layoutColorMode={layoutColorMode} mobileTopbarMenuActive={mobileTopbarMenuActive} onMobileTopbarMenuClick={onMobileTopbarMenuClick} onMobileSubTopbarMenuClick={onMobileSubTopbarMenuClick} />
+            <AppTopbar
+                onToggleMenuClick={onToggleMenuClick}
+                layoutColorMode={layoutColorMode}
+                mobileTopbarMenuActive={mobileTopbarMenuActive}
+                onMobileTopbarMenuClick={onMobileTopbarMenuClick}
+                onMobileSubTopbarMenuClick={onMobileSubTopbarMenuClick}
+            />
 
             <div className="layout-sidebar" onClick={onSidebarClick}>
                 <AppMenu model={menu} onMenuItemClick={onMenuItemClick} layoutColorMode={layoutColorMode} />
