@@ -4,15 +4,15 @@
 }
 
 /* Works on Chrome, Edge, and Safari */
-.layout-sidebar::-webkit-scrollbar {
+.layout-sidebar::-webkit-scrollbar, .p-dialog-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.layout-sidebar::-webkit-scrollbar-track {
+.layout-sidebar::-webkit-scrollbar-track,  .p-dialog-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.layout-sidebar::-webkit-scrollbar-thumb {
+.layout-sidebar::-webkit-scrollbar-thumb,  .p-dialog-content::-webkit-scrollbar-thumb {
     background-color: #707c8ca9;
     border-radius: 20px;
 }

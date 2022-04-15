@@ -7,10 +7,11 @@ import { useForm, Controller } from "react-hook-form";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
 import { Toast } from "primereact/toast";
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
+import { getCurrentYear } from "../../utils/date";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -23,7 +24,7 @@ const roleOptions = [
 ];
 
 const formDefaultValues = {
-    allowanceType: "competency",
+    allowanceType: "CompetencyAllowance",
     invigilator: {
         name: "Ivan",
         icNumber: "980225075123",
@@ -32,17 +33,17 @@ const formDefaultValues = {
         address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
     },
     bankAccount: {
-        name: "test",
-        accountNumber: "709231",
+        name: "",
+        accountNumber: "",
     },
     examination: {
         name: "spm",
-        session: 2,
-        year: 2004,
+        session: 1,
+        year: getCurrentYear(),
     },
     invigilation: {
         role: "invigilator",
-        centerCode: "abcd1001",
+        centerCode: "",
         morningSessions: 0,
         afternoonSessions: 0,
     },
@@ -59,14 +60,19 @@ const CompetencyAllowanceForm = () => {
         handleSubmit,
         getValues,
         setValue,
+        reset,
     } = useForm({
         defaultValues: formDefaultValues,
     });
+    const queryClient = useQueryClient();
 
-    const { data, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+    const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
         onSuccess: (data) => {
-            console.log("onsucessdata", data);
-            /** To add invalidate query */
+            toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Competency allowance claim is submitted" });
+            queryClient.invalidateQueries("allowanceClaims");
+            reset();
+            fileUploadRef.clear();
+            /** To optimize/improve invalidate query */
         },
         onError: (error) => {
             console.log("onerror", error.response);
@@ -93,6 +99,8 @@ const CompetencyAllowanceForm = () => {
             try {
                 const { files } = event;
                 const formData = getValues();
+
+                console.log(formData);
 
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
 
@@ -246,7 +254,7 @@ const CompetencyAllowanceForm = () => {
                         <Controller
                             name="examination.session"
                             control={control}
-                            rules={{ required: "Examination session is required" }}
+                            rules={{ required: "Examination session is required", min: { value: 1, message: "Examination session cannot be 0 or lesser than 0" } }}
                             render={({ field, fieldState }) => (
                                 <InputNumber {...field} inputId={field.name} className={`${fieldState.invalid && "p-invalid"}`} onChange={(e) => field.onChange(e.value)} />
                             )}

@@ -35,61 +35,11 @@ const vehicleTypeOptions = [
     { label: "Motorcycle", value: "motorcycle" },
 ];
 
-const formDefaultValues = {
-    allowanceType: "TravelAllowance",
-    invigilator: {
-        name: "Ivan",
-        icNumber: "980225075123",
-        phoneNumber: "0164912966",
-        baseSalary: 1500,
-        address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-    },
-    bankAccount: {
-        name: "",
-        accountNumber: "",
-    },
-    examination: {
-        name: "spm",
-        session: 1,
-        year: getCurrentYear(),
-    },
-    invigilation: {
-        centerCode: "",
-    },
-    vehicle: {
-        vehicleType: "car",
-        model: "",
-        registrationNumber: "",
-        engineCapacity: 0,
-        classOfClaim: "A",
-    },
-    homeAddress: {
-        address: "",
-        placeId: "",
-    },
-    schoolAddress: {
-        address: "",
-        placeId: "",
-    },
-    examinationVaultAddress: {
-        address: "",
-        placeId: "",
-    },
-    invigilationCenterAddress: {
-        address: "",
-        placeId: "",
-    },
-    totalAllowance: 0.0,
-    distanceBetweenHomeAndInvigilationCenter: 0,
-    distanceBetweenHomeAndExaminationVault: 0,
-    distanceBetweenSchoolAndInvigilationCenter: 0,
-    distanceBetweenSchoolAndExaminationVault: 0,
-};
-
-const TravelAllowanceForm = () => {
+const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const [displayCalculationModal, setDisplayCalculationModal] = useState(false);
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
     const {
         control,
         formState: { errors },
@@ -97,17 +47,24 @@ const TravelAllowanceForm = () => {
         getValues,
         setValue,
         watch,
-        reset,
     } = useForm({
-        defaultValues: formDefaultValues,
+        defaultValues: {
+            ...allowanceClaim,
+            invigilator: {
+                name: "Ivan",
+                icNumber: "980225075123",
+                phoneNumber: "0164912966",
+                baseSalary: 1500,
+                address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
+            },
+        },
     });
     const queryClient = useQueryClient();
 
-    const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+    const { isLoading, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: (data) => {
-            toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Travel allowance claim is submitted" });
+            toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
             queryClient.invalidateQueries("allowanceClaims");
-            reset();
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },
@@ -208,15 +165,16 @@ const TravelAllowanceForm = () => {
 
                 console.log(formData);
 
+                setIsUploading(true);
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
-                console.log("uploadattachmentresponse", uploadAttachmentsResponse);
+                setIsUploading(false);
 
                 if (!uploadAttachmentsResponse.status) {
                     toastRef.current.show({ severity: "error", summary: uploadAttachmentsResponse.summary, detail: uploadAttachmentsResponse.detail });
                     return;
                 }
 
-                mutate({ formData: { ...formData, totalAllowance: calculateTotalEligibleAllowance() }, attachments: uploadAttachmentsResponse.attachments });
+                mutate({ id: formData._id, formData: { ...formData, totalAllowance: calculateTotalEligibleAllowance() }, attachments: uploadAttachmentsResponse.attachments });
                 /* TODO: add api call to add new allowance claim to server */
             } catch (error) {
                 if (error.response.status === 401) {
@@ -231,7 +189,12 @@ const TravelAllowanceForm = () => {
 
     return (
         <div className="col-12">
-            <Toast ref={toastRef} />
+            <Toast
+                ref={toastRef}
+                onHide={() => {
+                    setDisplayModal(false);
+                }}
+            />
             <form
                 onSubmit={handleSubmit((data) => {
                     /* Handle image upload and form submit in fileUpload.upload method
@@ -599,10 +562,7 @@ const TravelAllowanceForm = () => {
                                     className={`${fieldState.invalid && "p-invalid"}`}
                                     mode="currency"
                                     currency="MYR"
-                                    onChange={(e) => {
-                                        field.onChange(e.value);
-                                        console.log("chbanging totalallowance");
-                                    }}
+                                    onChange={(e) => field.onChange(e.value)}
                                 />
                             )}
                         />
@@ -628,10 +588,11 @@ const TravelAllowanceForm = () => {
                             maxFileSize={1000000}
                             emptyTemplate={<p className="m-0">Drag and drop files to here to upload.</p>}
                         />
+                        <p className="m-2 font-bold text-sm mb-0">Note: Uploading new attachments will replace previously uploaded attachments</p>
                         <span className="m-2 font-bold text-sm">*Max 3 files can be uploaded, max file size is 1MB, accepted file types are .jpg, .png, .jpeg and .pdf</span>
                     </div>
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit"></Button>
+                        <Button label="Submit" type="submit" loading={isLoading || isUploading}></Button>
                     </div>
                 </div>
             </form>

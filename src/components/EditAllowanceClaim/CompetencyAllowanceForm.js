@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useState } from "react";
 
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
@@ -11,74 +11,45 @@ import { useMutation, useQueryClient } from "react-query";
 
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
-import { getCurrentYear } from "../../utils/date";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
     { label: "Sijil Tinggi Persekolahan Malaysia (STPM)", value: "stpm" },
     { label: "Malaysian University English Test (MUET)", value: "muet" },
 ];
+const roleOptions = [
+    { label: "Head of Invigilator", value: "headOfInvigilator" },
+    { label: "Invigilator", value: "invigilator" },
+];
 
-const formDefaultValues = {
-    allowanceType: "OtherAllowance",
-    invigilator: {
-        name: "Ivan",
-        icNumber: "980225075123",
-        phoneNumber: "0164912966",
-        baseSalary: 1500,
-        address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-    },
-    bankAccount: {
-        name: "",
-        accountNumber: "",
-    },
-    examination: {
-        name: "spm",
-        session: 1,
-        year: getCurrentYear(),
-    },
-    invigilation: {
-        centerCode: "",
-    },
-    expenses: {
-        food: 0.0,
-        lodging: {
-            days: 0,
-            total: 0.0,
-        },
-        hotel: {
-            days: 0,
-            total: 0,
-        },
-        tolTouchnGo: 0.0,
-        parking: 0.0,
-        dobby: 0.0,
-        telephoneFax: 0.0,
-        publicTransport: 0.0,
-    },
-    totalAllowance: 0.0,
-};
-
-const OtherAllowanceForm = () => {
+const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
     const {
         control,
         formState: { errors },
         handleSubmit,
         getValues,
         setValue,
-        reset,
     } = useForm({
-        defaultValues: formDefaultValues,
+        defaultValues: {
+            ...allowanceClaim,
+            invigilator: {
+                name: "Ivan",
+                icNumber: "980225075123",
+                phoneNumber: "0164912966",
+                baseSalary: 1500,
+                address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
+            },
+        },
     });
     const queryClient = useQueryClient();
 
-    const { data, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+    const { mutate, isLoading } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: (data) => {
-            toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Travel allowance claim is submitted" });
+            toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
             queryClient.invalidateQueries("allowanceClaims");
-            reset();
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },
@@ -89,10 +60,17 @@ const OtherAllowanceForm = () => {
     });
 
     const calculateTotalEligibleAllowance = () => {
-        const expenses = getValues("expenses");
-        const totalEligibleAllowance =
-            expenses.dobby + expenses.food + expenses.hotel.total + expenses.lodging.total + expenses.parking + expenses.publicTransport + expenses.telephoneFax + expenses.tolTouchnGo;
-        return totalEligibleAllowance;
+        const baseRatePerSession = {
+            morningSession: 20,
+            afternoonSession: 30,
+        };
+        const baseRateByRole = {
+            headOfInvigilator: 1.15,
+            invigilator: 1.05,
+        };
+        const [morningSessions, afternoonSessions, invigilationRole] = getValues(["invigilation.morningSessions", "invigilation.afternoonSessions", "invigilation.role"]);
+        const allowance = (morningSessions * baseRatePerSession["morningSession"] + afternoonSessions * baseRatePerSession["afternoonSession"]) * baseRateByRole[invigilationRole];
+        return allowance;
     };
 
     const onUpload = useCallback(
@@ -100,18 +78,18 @@ const OtherAllowanceForm = () => {
             try {
                 const { files } = event;
                 const formData = getValues();
-                console.log("formData", formData);
 
+                console.log(formData);
+                setIsUploading(true);
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
-                console.log("uploadattachmentresponse", uploadAttachmentsResponse);
+                setIsUploading(false);
 
                 if (!uploadAttachmentsResponse.status) {
                     toastRef.current.show({ severity: "error", summary: uploadAttachmentsResponse.summary, detail: uploadAttachmentsResponse.detail });
                     return;
                 }
 
-                mutate({ formData, attachments: uploadAttachmentsResponse.attachments });
-
+                mutate({ id: formData._id, formData, attachments: uploadAttachmentsResponse.attachments });
                 /* TODO: add api call to add new allowance claim to server */
             } catch (error) {
                 if (error.response.status === 401) {
@@ -126,7 +104,12 @@ const OtherAllowanceForm = () => {
 
     return (
         <div className="col-12">
-            <Toast ref={toastRef} />
+            <Toast
+                ref={toastRef}
+                onHide={() => {
+                    setDisplayModal(false);
+                }}
+            />
             <form
                 onSubmit={handleSubmit((data) => {
                     /* Handle image upload and form submit in fileUpload.upload method
@@ -174,7 +157,7 @@ const OtherAllowanceForm = () => {
                         <Controller
                             name="invigilator.baseSalary"
                             control={control}
-                            rules={{ required: "Base salary is required", min: { value: 0, message: "Must be greater than 0" } }}
+                            rules={{ required: "Base salary is required", min: 0 }}
                             render={({ field, fieldState }) => (
                                 <InputNumber {...field} inputId={field.name} className={`${fieldState.invalid && "p-invalid"}`} mode="currency" currency="MYR" disabled />
                             )}
@@ -243,6 +226,7 @@ const OtherAllowanceForm = () => {
                                     value={field.value}
                                     inputId={field.name}
                                     className={`${fieldState.invalid && "p-invalid"}`}
+                                    mode="decimal"
                                     useGrouping={false}
                                     onChange={(e) => field.onChange(e.value)}
                                 />
@@ -250,19 +234,40 @@ const OtherAllowanceForm = () => {
                         />
                         {errors?.examination?.year && <small className="p-error">{errors.examination.year.message}</small>}
                     </div>
-                    <div className="field col-12 md:col-6">
+                    <div className="field col-12 md:col-4">
                         <label htmlFor="examination.session">Examination Session</label>
                         <Controller
                             name="examination.session"
                             control={control}
-                            rules={{ required: "Examination session is required" }}
+                            rules={{ required: "Examination session is required", min: { value: 1, message: "Examination session cannot be 0 or lesser than 0" } }}
                             render={({ field, fieldState }) => (
                                 <InputNumber {...field} inputId={field.name} className={`${fieldState.invalid && "p-invalid"}`} onChange={(e) => field.onChange(e.value)} />
                             )}
                         />
                         {errors?.examination?.session && <small className="p-error">{errors.examination.session.message}</small>}
                     </div>
-                    <div className="field col-12 md:col-6">
+                    <div className="field col-12 md:col-4">
+                        <label htmlFor="invigilation.role">Role</label>
+                        <Controller
+                            name="invigilation.role"
+                            control={control}
+                            rules={{ required: "Invigilation role is required" }}
+                            render={({ field, fieldState }) => (
+                                <Dropdown
+                                    id={field.name}
+                                    {...field}
+                                    options={roleOptions}
+                                    className={`${fieldState.invalid && "p-invalid"}`}
+                                    onChange={(e) => {
+                                        field.onChange(e.value);
+                                        setValue("totalAllowance", calculateTotalEligibleAllowance());
+                                    }}
+                                />
+                            )}
+                        />
+                        {errors?.invigilation?.role && <small className="p-error">{errors.invigilation.role.message}</small>}
+                    </div>
+                    <div className="field col-12 md:col-4">
                         <label htmlFor="invigilation.centerCode">Examination Center Code</label>
                         <Controller
                             name="invigilation.centerCode"
@@ -272,202 +277,61 @@ const OtherAllowanceForm = () => {
                         />
                         {errors?.invigilation?.centerCode && <small className="p-error">{errors.invigilation.centerCode.message}</small>}
                     </div>
-                    <div className="col-12 mt-4 mb-1">
-                        <h5>Expenses Information</h5>
-                    </div>
                     <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.hotel.days">Hotel (days)</label>
+                        <label htmlFor="invigilation.morningSessions">Morning Sessions</label>
                         <Controller
-                            name="expenses.hotel.days"
+                            name="invigilation.morningSessions"
                             control={control}
-                            rules={{ required: "Total days stayed in hotel is required", min: { value: 0, message: "Must be greater than 0" } }}
+                            rules={{ required: "Morning sessions is required", min: 0 }}
                             render={({ field, fieldState }) => (
                                 <InputNumber
                                     {...field}
-                                    value={field.value}
                                     inputId={field.name}
+                                    tooltip="Total number of morning sessions in duty during the examination period"
+                                    tooltipOptions={{ position: "bottom" }}
                                     className={`${fieldState.invalid && "p-invalid"}`}
-                                    mode="decimal"
-                                    useGrouping={false}
-                                    onChange={(e) => field.onChange(e.value)}
-                                />
-                            )}
-                        />
-                        {errors?.expenses?.hotel?.days && <small className="p-error">{errors.expenses.hotel.days.message}</small>}
-                    </div>
-                    <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.hotel.total">Hotel (MYR)</label>
-                        <Controller
-                            name="expenses.hotel.total"
-                            control={control}
-                            rules={{ required: "Hotel expenses is required", min: { value: 0, message: "Must be greater than 0" } }}
-                            render={({ field, fieldState }) => (
-                                <InputNumber
-                                    {...field}
-                                    value={field.value}
-                                    inputId={field.name}
-                                    className={`${fieldState.invalid && "p-invalid"}`}
-                                    onBlur={(e) => {
-                                        field.onChange(parseFloat(e.target.value.slice(4)));
-                                        setValue("totalAllowance", calculateTotalEligibleAllowance(parseFloat(e.target.value.slice(4))));
+                                    onChange={(e) => {
+                                        field.onChange(e.value);
+                                        setValue("totalAllowance", calculateTotalEligibleAllowance());
                                     }}
-                                    onChange={(e) => field.onChange(e.value)}
-                                    mode="currency"
-                                    currency="MYR"
                                 />
                             )}
                         />
-
-                        {errors?.expenses?.hotel?.total && <small className="p-error">{errors.expenses.hotel.total.message}</small>}
+                        {errors?.invigilation?.morningSessions && <small className="p-error">{errors.invigilation.morningSessions.message}</small>}
                     </div>
                     <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.lodging.days">Lodging (days)</label>
+                        <label htmlFor="invigilation.afternoonSessions">Afternoon Sessions</label>
                         <Controller
-                            name="expenses.lodging.days"
+                            name="invigilation.afternoonSessions"
                             control={control}
-                            rules={{ required: "Total days stayed in lodging is required", min: { value: 0, message: "Must be greater than 0" } }}
+                            rules={{ required: "Afternoon sessions is required", min: 0 }}
                             render={({ field, fieldState }) => (
                                 <InputNumber
                                     {...field}
-                                    value={field.value}
                                     inputId={field.name}
+                                    tooltip="Total number of morning sessions in duty during the examination period"
+                                    tooltipOptions={{ position: "bottom" }}
                                     className={`${fieldState.invalid && "p-invalid"}`}
-                                    mode="decimal"
-                                    useGrouping={false}
-                                    onChange={(e) => field.onChange(e.value)}
-                                />
-                            )}
-                        />
-                        {errors?.expenses?.lodging?.days && <small className="p-error">{errors.expenses.lodging.days.message}</small>}
-                    </div>
-                    <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.lodging.total">Lodging (MYR)</label>
-                        <Controller
-                            name="expenses.lodging.total"
-                            control={control}
-                            rules={{ required: "Lodging expenses is required", min: { value: 0, message: "Must be greater than 0" } }}
-                            render={({ field, fieldState }) => (
-                                <InputNumber
-                                    {...field}
-                                    value={field.value}
-                                    inputId={field.name}
-                                    className={`${fieldState.invalid && "p-invalid"}`}
-                                    onBlur={(e) => {
-                                        field.onChange(parseFloat(e.target.value.slice(4)));
-                                        setValue("totalAllowance", calculateTotalEligibleAllowance(parseFloat(e.target.value.slice(4))));
+                                    onChange={(e) => {
+                                        field.onChange(e.value);
+                                        setValue("totalAllowance", calculateTotalEligibleAllowance());
                                     }}
-                                    onChange={(e) => field.onChange(e.value)}
-                                    mode="currency"
-                                    currency="MYR"
                                 />
                             )}
                         />
-                        {errors?.expenses?.lodging?.total && <small className="p-error">{errors.expenses.lodging.total.message}</small>}
-                    </div>
-                    <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.food">Food (MYR)</label>
-                        <Controller
-                            name="expenses.food"
-                            control={control}
-                            rules={{ required: "Food expenses is required", min: { value: 0, message: "Must be greater than 0" } }}
-                            render={({ field, fieldState }) => (
-                                <InputNumber
-                                    {...field}
-                                    inputId={field.name}
-                                    className={`${fieldState.invalid && "p-invalid"}`}
-                                    onBlur={(e) => {
-                                        field.onChange(parseFloat(e.target.value.slice(4)));
-                                        setValue("totalAllowance", calculateTotalEligibleAllowance(parseFloat(e.target.value.slice(4))));
-                                    }}
-                                    onChange={(e) => field.onChange(e.value)}
-                                    mode="currency"
-                                    currency="MYR"
-                                />
-                            )}
-                        />
-                        {errors?.expenses?.food && <small className="p-error">{errors.expenses.food.message}</small>}
-                    </div>
-                    <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.tolTouchnGo">Toll / Touch'n Go (MYR)</label>
-                        <Controller
-                            name="expenses.tolTouchnGo"
-                            control={control}
-                            rules={{ required: "Toll / Touch'n Go expenses is required", min: { value: 0, message: "Must be greater than 0" } }}
-                            render={({ field, fieldState }) => (
-                                <InputNumber
-                                    {...field}
-                                    inputId={field.name}
-                                    className={`${fieldState.invalid && "p-invalid"}`}
-                                    onBlur={(e) => {
-                                        field.onChange(parseFloat(e.target.value.slice(4)));
-                                        setValue("totalAllowance", calculateTotalEligibleAllowance(parseFloat(e.target.value.slice(4))));
-                                    }}
-                                    onChange={(e) => field.onChange(e.value)}
-                                    mode="currency"
-                                    currency="MYR"
-                                />
-                            )}
-                        />
-                        {errors?.expenses?.tolTouchnGo && <small className="p-error">{errors.expenses.tolTouchnGo.message}</small>}
-                    </div>
-                    <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.publicTransport">Public Transport (MYR)</label>
-                        <Controller
-                            name="expenses.publicTransport"
-                            control={control}
-                            rules={{ required: "Public transport expenses is required", min: { value: 0, message: "Must be greater than 0" } }}
-                            render={({ field, fieldState }) => (
-                                <InputNumber
-                                    {...field}
-                                    inputId={field.name}
-                                    className={`${fieldState.invalid && "p-invalid"}`}
-                                    onBlur={(e) => {
-                                        field.onChange(parseFloat(e.target.value.slice(4)));
-                                        setValue("totalAllowance", calculateTotalEligibleAllowance(parseFloat(e.target.value.slice(4))));
-                                    }}
-                                    onChange={(e) => field.onChange(e.value)}
-                                    mode="currency"
-                                    currency="MYR"
-                                />
-                            )}
-                        />
-                        {errors?.expenses?.publicTransport && <small className="p-error">{errors.expenses.publicTransport.message}</small>}
-                    </div>
-                    <div className="field col-12 md:col-6">
-                        <label htmlFor="expenses.parking">Parking (MYR)</label>
-                        <Controller
-                            name="expenses.parking"
-                            control={control}
-                            rules={{ required: "Parking expenses is required", min: { value: 0, message: "Must be greater than 0" } }}
-                            render={({ field, fieldState }) => (
-                                <InputNumber
-                                    {...field}
-                                    inputId={field.name}
-                                    className={`${fieldState.invalid && "p-invalid"}`}
-                                    onBlur={(e) => {
-                                        field.onChange(parseFloat(e.target.value.slice(4)));
-                                        setValue("totalAllowance", calculateTotalEligibleAllowance(parseFloat(e.target.value.slice(4))));
-                                    }}
-                                    onChange={(e) => field.onChange(e.value)}
-                                    mode="currency"
-                                    currency="MYR"
-                                />
-                            )}
-                        />
-                        {errors?.expenses?.parking && <small className="p-error">{errors.expenses.parking.message}</small>}
+                        {errors?.invigilation?.afternoonSessions && <small className="p-error">{errors.invigilation.afternoonSessions.message}</small>}
                     </div>
                     <div className="field col-12">
                         <label htmlFor="totalAllowance">Total Eligible Allowance</label>
                         <Controller
                             name="totalAllowance"
                             control={control}
-                            rules={{ required: "Total eligible allowance is required", min: { value: 0, message: "Must be greater than 0" } }}
+                            rules={{ required: "Total eligible allowance is required", min: 0 }}
                             render={({ field, fieldState }) => (
                                 <InputNumber
                                     {...field}
                                     disabled
                                     inputId={field.name}
-                                    on
                                     className={`${fieldState.invalid && "p-invalid"}`}
                                     mode="currency"
                                     currency="MYR"
@@ -477,6 +341,7 @@ const OtherAllowanceForm = () => {
                         />
                         {errors?.totalAllowance && <small className="p-error">{errors.totalAllowance.message}</small>}
                     </div>
+
                     <div className="field col-12">
                         <label htmlFor="attachments">Attachments</label>
                         <FileUpload
@@ -489,11 +354,12 @@ const OtherAllowanceForm = () => {
                             maxFileSize={1000000}
                             emptyTemplate={<p className="m-0">Drag and drop files to here to upload.</p>}
                         />
+                        <p className="m-2 font-bold text-sm mb-0">Note: Uploading new attachments will replace previously uploaded attachments</p>
                         <span className="m-2 font-bold text-sm">*Max 3 files can be uploaded, max file size is 1MB, accepted file types are .jpg, .png, .jpeg and .pdf</span>
                     </div>
 
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit"></Button>
+                        <Button label="Submit" type="submit" loading={isLoading || isUploading}></Button>
                     </div>
                 </div>
             </form>
@@ -501,4 +367,4 @@ const OtherAllowanceForm = () => {
     );
 };
 
-export default OtherAllowanceForm;
+export default CompetencyAllowanceForm;

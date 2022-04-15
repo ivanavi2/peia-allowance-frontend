@@ -8,4 +8,8 @@ const addAllowanceClaim = async ({ formData, attachments }) => {
     return serverClient({ url: "/allowanceClaim", method: "POST", data: { formData, attachments } });
 };
 
-export default { addAllowanceClaim, getAllAllowanceClaim };
+const editAllowanceClaim = async ({ id, formData, attachments }) => {
+    return serverClient({ url: `/allowanceClaim/${id}`, method: "PUT", data: { formData, attachments } });
+};
+
+export default { addAllowanceClaim, getAllAllowanceClaim, editAllowanceClaim };

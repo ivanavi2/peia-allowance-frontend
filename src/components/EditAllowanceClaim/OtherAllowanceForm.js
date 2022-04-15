@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useState } from "react";
 
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
@@ -19,66 +19,34 @@ const examinationNameOptions = [
     { label: "Malaysian University English Test (MUET)", value: "muet" },
 ];
 
-const formDefaultValues = {
-    allowanceType: "OtherAllowance",
-    invigilator: {
-        name: "Ivan",
-        icNumber: "980225075123",
-        phoneNumber: "0164912966",
-        baseSalary: 1500,
-        address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-    },
-    bankAccount: {
-        name: "",
-        accountNumber: "",
-    },
-    examination: {
-        name: "spm",
-        session: 1,
-        year: getCurrentYear(),
-    },
-    invigilation: {
-        centerCode: "",
-    },
-    expenses: {
-        food: 0.0,
-        lodging: {
-            days: 0,
-            total: 0.0,
-        },
-        hotel: {
-            days: 0,
-            total: 0,
-        },
-        tolTouchnGo: 0.0,
-        parking: 0.0,
-        dobby: 0.0,
-        telephoneFax: 0.0,
-        publicTransport: 0.0,
-    },
-    totalAllowance: 0.0,
-};
-
-const OtherAllowanceForm = () => {
+const OtherAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
     const {
         control,
         formState: { errors },
         handleSubmit,
         getValues,
         setValue,
-        reset,
     } = useForm({
-        defaultValues: formDefaultValues,
+        defaultValues: {
+            ...allowanceClaim,
+            invigilator: {
+                name: "Ivan",
+                icNumber: "980225075123",
+                phoneNumber: "0164912966",
+                baseSalary: 1500,
+                address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
+            },
+        },
     });
     const queryClient = useQueryClient();
 
-    const { data, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+    const { isLoading, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: (data) => {
-            toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Travel allowance claim is submitted" });
+            toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
             queryClient.invalidateQueries("allowanceClaims");
-            reset();
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },
@@ -102,15 +70,16 @@ const OtherAllowanceForm = () => {
                 const formData = getValues();
                 console.log("formData", formData);
 
+                setIsUploading(true);
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
-                console.log("uploadattachmentresponse", uploadAttachmentsResponse);
+                setIsUploading(false);
 
                 if (!uploadAttachmentsResponse.status) {
                     toastRef.current.show({ severity: "error", summary: uploadAttachmentsResponse.summary, detail: uploadAttachmentsResponse.detail });
                     return;
                 }
 
-                mutate({ formData, attachments: uploadAttachmentsResponse.attachments });
+                mutate({ id: formData._id, formData, attachments: uploadAttachmentsResponse.attachments });
 
                 /* TODO: add api call to add new allowance claim to server */
             } catch (error) {
@@ -126,7 +95,12 @@ const OtherAllowanceForm = () => {
 
     return (
         <div className="col-12">
-            <Toast ref={toastRef} />
+            <Toast
+                ref={toastRef}
+                onHide={() => {
+                    setDisplayModal(false);
+                }}
+            />
             <form
                 onSubmit={handleSubmit((data) => {
                     /* Handle image upload and form submit in fileUpload.upload method
@@ -489,11 +463,12 @@ const OtherAllowanceForm = () => {
                             maxFileSize={1000000}
                             emptyTemplate={<p className="m-0">Drag and drop files to here to upload.</p>}
                         />
+                        <p className="m-2 font-bold text-sm mb-0">Note: Uploading new attachments will replace previously uploaded attachments</p>
                         <span className="m-2 font-bold text-sm">*Max 3 files can be uploaded, max file size is 1MB, accepted file types are .jpg, .png, .jpeg and .pdf</span>
                     </div>
 
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit"></Button>
+                        <Button label="Submit" type="submit" loading={isLoading || isUploading}></Button>
                     </div>
                 </div>
             </form>
