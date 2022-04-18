@@ -76,7 +76,11 @@ const CompetencyAllowanceForm = () => {
         },
         onError: (error) => {
             console.log("onerror", error.response);
-            if (error.response) toastRef.current.show({ severity: "error", summary: error.response.data?.message });
+            if (error.response.status === 401) {
+                toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
+                return;
+            }
+            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
         },
     });
 

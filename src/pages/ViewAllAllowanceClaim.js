@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useQuery } from "react-query";
 import { Column } from "primereact/column";
 import { Tag } from "primereact/tag";
@@ -80,7 +80,7 @@ const typeLabel = {
 
 const ViewAllAllowanceClaim = () => {
     const { isLoading, isError, data, error } = useQuery("allowanceClaims", AllowanceClaimService.getAllAllowanceClaim);
-    const allowanceClaims = data?.data.allowanceClaims;
+    const allowanceClaims = data?.allowanceClaims;
     const [displayModal, setDisplayModal] = useState(false);
     const [currentSelectedAllowanceClaim, setCurrentSelectedAllowanceClaim] = useState({});
 
@@ -264,8 +264,4 @@ const ViewAllAllowanceClaim = () => {
     );
 };
 
-const comparisonFn = function (prevProps, nextProps) {
-    return prevProps.location.pathname === nextProps.location.pathname;
-};
-
-export default React.memo(ViewAllAllowanceClaim, comparisonFn);
+export default React.memo(ViewAllAllowanceClaim);

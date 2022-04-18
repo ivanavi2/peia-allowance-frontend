@@ -1,7 +1,9 @@
 import { serverClient } from "./AxiosUtils";
 
 const getAllAllowanceClaim = async () => {
-    return serverClient({ url: "/allowanceClaim", method: "GET" });
+    const response = await serverClient({ url: "/allowanceClaim", method: "GET" });
+    const { data } = response;
+    return data;
 };
 
 const addAllowanceClaim = async ({ formData, attachments }) => {

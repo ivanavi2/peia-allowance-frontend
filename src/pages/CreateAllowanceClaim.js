@@ -4,6 +4,7 @@ import { TabView, TabPanel } from "primereact/tabview";
 import CompetencyAllowanceForm from "../components/CreateAllowanceClaim/CompetencyAllowanceForm";
 import TravelAllowanceForm from "../components/CreateAllowanceClaim/TravelAllowanceForm";
 import OtherAllowanceForm from "../components/CreateAllowanceClaim/OtherAllowanceClaim";
+import UnlockAccess from "../components/UnlockAccess";
 
 const AddAllowanceClaim = () => {
     const [tabActiveIndex, setTabActiveIndex] = useState(0);
@@ -29,8 +30,4 @@ const AddAllowanceClaim = () => {
     );
 };
 
-const comparisonFn = function (prevProps, nextProps) {
-    return prevProps.location.pathname === nextProps.location.pathname;
-};
-
-export default React.memo(AddAllowanceClaim, comparisonFn);
+export default React.memo(AddAllowanceClaim);

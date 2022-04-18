@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import { useQuery } from "react-query";
 
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./components/Dashboard";
@@ -28,41 +29,79 @@ import EmptyPage from "./pages/EmptyPage";
 import TimelineDemo from "./pages/TimelineDemo";
 import CreateAllowanceClaim from "./pages/CreateAllowanceClaim";
 import ViewAllAllowanceClaim from "./pages/ViewAllAllowanceClaim";
+import ProtectedRoute from "./pages/ProtectedRoute";
+import Unauthorized from "./pages/Unauthorized";
+import Error from "./pages/Error";
 
-import PublicLayout from "./layouts/PublicLayout";
+// import PublicLayout from "./layouts/PublicLayout";
+import Login from "./pages/Login";
+
+import { AuthProvider } from "./context/AuthContext";
+import UserService from "./service/UserService";
 
 const App = () => {
+    // const { user, setUser, isLoading } = useFindUser();
+    const id = localStorage.getItem("userId");
+    const { isLoading, isError, data, error } = useQuery(["user", id], () => UserService.getUserById(id), { enabled: !!id });
+
+    console.log(data?.user);
     return (
-        <Routes>
-            <Route path="/login" element={<PublicLayout />} />
-            <Route path="/" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="/createAllowanceClaim" element={<CreateAllowanceClaim />} />
-                <Route path="/viewAllAllowanceClaim" element={<ViewAllAllowanceClaim />} />
-                <Route path="/formlayout" element={<FormLayoutDemo />} />
-                <Route path="/input" element={<InputDemo />} />
-                <Route path="/floatlabel" element={<FloatLabelDemo />} />
-                <Route path="/invalidstate" element={<InvalidStateDemo />} />
-                <Route path="/button" element={<ButtonDemo />} />
-                <Route path="/table" element={<TableDemo />} />
-                <Route path="/list" element={<ListDemo />} />
-                <Route path="/tree" element={<TreeDemo />} />
-                <Route path="/panel" element={<PanelDemo />} />
-                <Route path="/overlay" element={<OverlayDemo />} />
-                <Route path="/media" element={<MediaDemo />} />
-                <Route path="/menu" element={<MenuDemo />} />
-                <Route path="/messages" element={<MessagesDemo />} />
-                <Route path="/blocks" element={<BlocksDemo />} />
-                <Route path="/icons" element={<IconsDemo />} />
-                <Route path="/file" element={<FileDemo />} />
-                <Route path="/chart" element={<ChartDemo />} />
-                <Route path="/misc" element={<MiscDemo />} />
-                <Route path="/timeline" element={<TimelineDemo />} />
-                <Route path="/crud" element={<Crud />} />
-                <Route path="/empty" element={<EmptyPage />} />
-                <Route path="/documentation" element={<Documentation />} />
-            </Route>
-        </Routes>
+        <AuthProvider>
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<AdminLayout />}>
+                    <Route
+                        index
+                        element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/createAllowanceClaim"
+                        element={
+                            <ProtectedRoute roles={["Admin", "Teacher"]}>
+                                <CreateAllowanceClaim />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/viewAllAllowanceClaim"
+                        element={
+                            <ProtectedRoute roles={["Admin", "Teacher"]}>
+                                <ViewAllAllowanceClaim />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+
+                    {/*    <Route path="/formlayout" element={<FormLayoutDemo />} />
+                    <Route path="/input" element={<InputDemo />} />
+                    <Route path="/floatlabel" element={<FloatLabelDemo />} />
+                    <Route path="/invalidstate" element={<InvalidStateDemo />} />
+                    <Route path="/button" element={<ButtonDemo />} />
+                    <Route path="/table" element={<TableDemo />} />
+                    <Route path="/list" element={<ListDemo />} />
+                    <Route path="/tree" element={<TreeDemo />} />
+                    <Route path="/panel" element={<PanelDemo />} />
+                    <Route path="/overlay" element={<OverlayDemo />} />
+                    <Route path="/media" element={<MediaDemo />} />
+                    <Route path="/menu" element={<MenuDemo />} />
+                    <Route path="/messages" element={<MessagesDemo />} />
+                    <Route path="/blocks" element={<BlocksDemo />} />
+                    <Route path="/icons" element={<IconsDemo />} />
+                    <Route path="/file" element={<FileDemo />} />
+                    <Route path="/chart" element={<ChartDemo />} />
+                    <Route path="/misc" element={<MiscDemo />} />
+                    <Route path="/timeline" element={<TimelineDemo />} />
+                    <Route path="/crud" element={<Crud />} />
+                    <Route path="/empty" element={<EmptyPage />} />
+                    <Route path="/documentation" element={<Documentation />} /> */}
+                </Route>
+                <Route path="*" element={<Error />} />
+            </Routes>
+        </AuthProvider>
     );
 };
 

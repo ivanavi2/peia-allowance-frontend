@@ -19,6 +19,8 @@ import "../../assets/demo/Demos.scss";
 import "../../assets/layout/layout.scss";
 import "../../App.scss";
 
+import useAuth from "../../CustomHooks/useAuth";
+
 const AdminLayout = () => {
     /*     const [layoutMode, setLayoutMode] = useState("static");
     const [layoutColorMode, setLayoutColorMode] = useState("light");
@@ -39,6 +41,10 @@ const AdminLayout = () => {
 
     let menuClick = false;
     let mobileTopbarMenuClick = false;
+
+    const { user, isLoading } = useAuth();
+
+    console.log("user in adminlayout", user);
 
     useEffect(() => {
         if (mobileMenuActive) {
@@ -131,7 +137,7 @@ const AdminLayout = () => {
         return window.innerWidth >= 992;
     };
 
-    const menu = [
+    const adminMenu = [
         {
             label: "Home",
             items: [
@@ -143,7 +149,28 @@ const AdminLayout = () => {
             ],
         },
         {
-            label: "UI Components",
+            label: "Allowance Claim",
+            icon: "pi pi-fw pi-sitemap",
+            items: [
+                // { label: "Create Allowance Claim", icon: "fa-solid fa-file-signature", to: "/createAllowanceClaim" },
+                { label: "View All Allowance Claim", icon: "fa-solid fa-file-lines", to: "/viewAllAllowanceClaim" },
+            ],
+        },
+    ];
+
+    const teacherMenu = [
+        {
+            label: "Home",
+            items: [
+                {
+                    label: "Dashboard",
+                    icon: "pi pi-fw pi-home",
+                    to: "/",
+                },
+            ],
+        },
+        {
+            label: "Allowance Claim",
             icon: "pi pi-fw pi-sitemap",
             items: [
                 { label: "Create Allowance Claim", icon: "fa-solid fa-file-signature", to: "/createAllowanceClaim" },
@@ -258,6 +285,18 @@ const AdminLayout = () => {
             ],
         }, */
     ];
+
+    const userGroupToMenu = {
+        Teacher: teacherMenu,
+        Admin: adminMenu,
+    };
+
+    let menu;
+    if (isLoading || !user) {
+        menu = [];
+    } else {
+        menu = userGroupToMenu[user.userGroup];
+    }
 
     const addClass = (element, className) => {
         if (element.classList) element.classList.add(className);

@@ -1,7 +1,18 @@
-import React from "react";
+import React, { useRef } from "react";
 import classNames from "classnames";
+import { OverlayPanel } from "primereact/overlaypanel";
+import { Button } from "primereact/button";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const AppTopbar = (props) => {
+    const profileButtonOverlayRef = useRef(null);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const onSignOutClicked = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        navigate("/login", { state: { from: location }, replace: true });
+    };
     return (
         <div className="layout-topbar">
             <button type="button" className="p-link  layout-menu-button layout-topbar-button ml-1" onClick={props.onToggleMenuClick}>
@@ -14,24 +25,22 @@ export const AppTopbar = (props) => {
 
             <ul className={classNames("layout-topbar-menu lg:flex origin-top", { "layout-topbar-menu-mobile-active": props.mobileTopbarMenuActive })}>
                 <li>
-                    <button className="p-link layout-topbar-button" onClick={props.onMobileSubTopbarMenuClick}>
-                        <i className="pi pi-calendar" />
-                        <span>Events</span>
-                    </button>
-                </li>
-                <li>
-                    <button className="p-link layout-topbar-button" onClick={props.onMobileSubTopbarMenuClick}>
-                        <i className="pi pi-cog" />
-                        <span>Settings</span>
-                    </button>
-                </li>
-                <li>
-                    <button className="p-link layout-topbar-button" onClick={props.onMobileSubTopbarMenuClick}>
+                    <button
+                        className="p-link layout-topbar-button"
+                        onClick={(e) => {
+                            profileButtonOverlayRef.current.toggle(e);
+                        }}
+                    >
                         <i className="pi pi-user" />
                         <span>Profile</span>
                     </button>
                 </li>
             </ul>
+            <OverlayPanel ref={profileButtonOverlayRef}>
+                <div>
+                    <Button label="Sign out" className="p-button-text p-button-secondary" onClick={onSignOutClicked} />
+                </div>
+            </OverlayPanel>
         </div>
     );
 };

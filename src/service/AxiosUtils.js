@@ -4,7 +4,7 @@ const client = axios.create({ baseURL: "http://localhost:3001" });
 
 export const serverClient = ({ ...options }) => {
     /*  client.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem(
-        'adminToken'
+        'token'
       )}` */
     client.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
 
