@@ -35,61 +35,59 @@ const vehicleTypeOptions = [
     { label: "Motorcycle", value: "motorcycle" },
 ];
 
-const formDefaultValues = {
-    allowanceType: "TravelAllowance",
-    invigilator: {
-        name: "Ivan",
-        icNumber: "980225075123",
-        phoneNumber: "0164912966",
-        baseSalary: 1500,
-        address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-    },
-    bankAccount: {
-        name: "",
-        accountNumber: "",
-    },
-    examination: {
-        name: "spm",
-        session: 1,
-        year: getCurrentYear(),
-    },
-    invigilation: {
-        centerCode: "",
-    },
-    vehicle: {
-        vehicleType: "car",
-        model: "",
-        registrationNumber: "",
-        engineCapacity: 0,
-        classOfClaim: "A",
-    },
-    homeAddress: {
-        address: "",
-        placeId: "",
-    },
-    schoolAddress: {
-        address: "",
-        placeId: "",
-    },
-    examinationVaultAddress: {
-        address: "",
-        placeId: "",
-    },
-    invigilationCenterAddress: {
-        address: "",
-        placeId: "",
-    },
-    totalAllowance: 0.0,
-    distanceBetweenHomeAndInvigilationCenter: 0,
-    distanceBetweenHomeAndExaminationVault: 0,
-    distanceBetweenSchoolAndInvigilationCenter: 0,
-    distanceBetweenSchoolAndExaminationVault: 0,
-};
-
-const TravelAllowanceForm = () => {
-    const [displayCalculationModal, setDisplayCalculationModal] = useState(false);
-    const fileUploadRef = useRef(null);
-    const toastRef = useRef(null);
+const TravelAllowanceForm = ({ user }) => {
+    const { teacherName, icNumber, teacherPhoneNumber, salary, homeAddress } = user;
+    const formDefaultValues = {
+        user: user._id,
+        allowanceType: "TravelAllowance",
+        invigilator: {
+            name: teacherName,
+            icNumber: icNumber,
+            phoneNumber: teacherPhoneNumber,
+            baseSalary: parseFloat(salary),
+            address: homeAddress,
+        },
+        bankAccount: {
+            name: "",
+            accountNumber: "",
+        },
+        examination: {
+            name: "spm",
+            session: 1,
+            year: getCurrentYear(),
+        },
+        invigilation: {
+            centerCode: "",
+        },
+        vehicle: {
+            vehicleType: "car",
+            model: "",
+            registrationNumber: "",
+            engineCapacity: 0,
+            classOfClaim: "A",
+        },
+        homeAddress: {
+            address: "",
+            placeId: "",
+        },
+        schoolAddress: {
+            address: "",
+            placeId: "",
+        },
+        examinationVaultAddress: {
+            address: "",
+            placeId: "",
+        },
+        invigilationCenterAddress: {
+            address: "",
+            placeId: "",
+        },
+        totalAllowance: 0.0,
+        distanceBetweenHomeAndInvigilationCenter: 0,
+        distanceBetweenHomeAndExaminationVault: 0,
+        distanceBetweenSchoolAndInvigilationCenter: 0,
+        distanceBetweenSchoolAndExaminationVault: 0,
+    };
     const {
         control,
         formState: { errors },
@@ -101,14 +99,17 @@ const TravelAllowanceForm = () => {
     } = useForm({
         defaultValues: formDefaultValues,
     });
+    const [displayCalculationModal, setDisplayCalculationModal] = useState(false);
+    const fileUploadRef = useRef(null);
+    const toastRef = useRef(null);
     const queryClient = useQueryClient();
 
     const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
         onSuccess: (data) => {
             toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Travel allowance claim is submitted" });
-            queryClient.invalidateQueries("allowanceClaims");
+            fileUploadRef.current.clear();
             reset();
-            fileUploadRef.clear();
+            queryClient.invalidateQueries("allowanceClaims");
             /** To optimize/improve invalidate query */
         },
         onError: (error) => {

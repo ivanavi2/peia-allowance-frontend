@@ -6,10 +6,10 @@ const UnlockAccess = ({ children, roles }) => {
     const { user } = useAuth();
 
     const hasPermission = (roles) => {
-        return roles && !roles.includes(user.userGroup);
+        return roles && roles.includes(user.userGroup);
     };
 
-    return <>{hasPermission() && children}</>;
+    return <>{hasPermission(roles) && children}</>;
 };
 
 export default UnlockAccess;

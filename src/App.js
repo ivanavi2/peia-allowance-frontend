@@ -29,6 +29,7 @@ import EmptyPage from "./pages/EmptyPage";
 import TimelineDemo from "./pages/TimelineDemo";
 import CreateAllowanceClaim from "./pages/CreateAllowanceClaim";
 import ViewAllAllowanceClaim from "./pages/ViewAllAllowanceClaim";
+import ViewAllowanceRateConfiguration from "./pages/ViewAllowanceRateConfiguration";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import Error from "./pages/Error";
@@ -37,14 +38,8 @@ import Error from "./pages/Error";
 import Login from "./pages/Login";
 
 import { AuthProvider } from "./context/AuthContext";
-import UserService from "./service/UserService";
 
 const App = () => {
-    // const { user, setUser, isLoading } = useFindUser();
-    const id = localStorage.getItem("userId");
-    const { isLoading, isError, data, error } = useQuery(["user", id], () => UserService.getUserById(id), { enabled: !!id });
-
-    console.log(data?.user);
     return (
         <AuthProvider>
             <Routes>
@@ -61,7 +56,7 @@ const App = () => {
                     <Route
                         path="/createAllowanceClaim"
                         element={
-                            <ProtectedRoute roles={["Admin", "Teacher"]}>
+                            <ProtectedRoute roles={["Teacher"]}>
                                 <CreateAllowanceClaim />
                             </ProtectedRoute>
                         }
@@ -71,6 +66,14 @@ const App = () => {
                         element={
                             <ProtectedRoute roles={["Admin", "Teacher"]}>
                                 <ViewAllAllowanceClaim />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/viewAllAllowanceRate"
+                        element={
+                            <ProtectedRoute roles={["Admin"]}>
+                                <ViewAllowanceRateConfiguration />
                             </ProtectedRoute>
                         }
                     />

@@ -4,7 +4,6 @@ import { Outlet, useLocation } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
 
 import { AppTopbar } from "../../AppTopbar";
-import { AppFooter } from "../../AppFooter";
 import { AppMenu } from "../../AppMenu";
 
 import PrimeReact from "primereact/api";
@@ -43,8 +42,6 @@ const AdminLayout = () => {
     let mobileTopbarMenuClick = false;
 
     const { user, isLoading } = useAuth();
-
-    console.log("user in adminlayout", user);
 
     useEffect(() => {
         if (mobileMenuActive) {
@@ -154,6 +151,7 @@ const AdminLayout = () => {
             items: [
                 // { label: "Create Allowance Claim", icon: "fa-solid fa-file-signature", to: "/createAllowanceClaim" },
                 { label: "View All Allowance Claim", icon: "fa-solid fa-file-lines", to: "/viewAllAllowanceClaim" },
+                { label: "View Allowance Rate Configuration", icon: "fa-solid fa-gear", to: "/viewAllAllowanceRate" },
             ],
         },
     ];

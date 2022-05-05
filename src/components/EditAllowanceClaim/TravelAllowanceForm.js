@@ -15,7 +15,6 @@ import { useMutation, useQueryClient } from "react-query";
 import fetchDistance from "../../utils/fetchDistance";
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
-import { getCurrentYear } from "../../utils/date";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -50,13 +49,6 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     } = useForm({
         defaultValues: {
             ...allowanceClaim,
-            invigilator: {
-                name: "Ivan",
-                icNumber: "980225075123",
-                phoneNumber: "0164912966",
-                baseSalary: 1500,
-                address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-            },
         },
     });
     const queryClient = useQueryClient();

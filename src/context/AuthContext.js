@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import AuthService from "../service/AuthService";
 import UserService from "../service/UserService";
+import TeacherService from "../service/TeacherService";
 
 export const AuthContext = createContext(null);
 
@@ -15,21 +16,35 @@ export const AuthProvider = ({ children }) => {
     const from = location.state?.from?.pathname || "/";
     const userId = localStorage.getItem("userId");
 
-    const { isLoading } = useQuery(["user", userId], () => UserService.getUserById(userId), {
+    const { isLoading: isLoadingUser } = useQuery(["user", userId], () => UserService.getUserById(userId), {
         enabled: !!userId,
-        onSuccess: ({ user }) => {
-            setUser(user);
-        },
+        staleTime: 5 * 60 * 1000,
+        onSuccess: ({ user }) => setUser(user),
     });
+
+    const { isLoading: isLoadingTeacher } = useQuery(["teacherByUser", userId], () => TeacherService.getTeacherByUser(userId), {
+        enabled: !!userId && !!user && user.userGroup === "Teacher",
+        staleTime: 5 * 60 * 1000,
+        onSuccess: ({ teacher }) => setUser({ ...user, ...teacher }),
+    });
+
+    let isLoading = isLoadingTeacher || isLoadingUser;
 
     const signIn = async (login, password) => {
         try {
             const {
                 data: { token, user },
             } = await AuthService.login({ login, password });
+
+            if (user.userGroup === "Teacher") {
+                const { teacher } = await TeacherService.getTeacherByUser(user._id);
+                setUser({ ...user, ...teacher });
+            } else {
+                setUser(user);
+            }
+
             localStorage.setItem("token", token);
             localStorage.setItem("userId", user._id);
-            setUser(user);
             navigate(from, { replace: true });
         } catch (error) {
             if (error.response) {

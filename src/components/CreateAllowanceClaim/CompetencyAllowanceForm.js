@@ -23,35 +23,37 @@ const roleOptions = [
     { label: "Invigilator", value: "invigilator" },
 ];
 
-const formDefaultValues = {
-    allowanceType: "CompetencyAllowance",
-    invigilator: {
-        name: "Ivan",
-        icNumber: "980225075123",
-        phoneNumber: "0164912966",
-        baseSalary: 1500,
-        address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-    },
-    bankAccount: {
-        name: "",
-        accountNumber: "",
-    },
-    examination: {
-        name: "spm",
-        session: 1,
-        year: getCurrentYear(),
-    },
-    invigilation: {
-        role: "invigilator",
-        centerCode: "",
-        morningSessions: 0,
-        afternoonSessions: 0,
-    },
-    totalAllowance: 0.0,
-    stationeryExpenses: 0,
-};
+const CompetencyAllowanceForm = ({ user }) => {
+    const { teacherName, icNumber, teacherPhoneNumber, salary, homeAddress } = user;
+    const formDefaultValues = {
+        user: user._id,
+        allowanceType: "CompetencyAllowance",
+        invigilator: {
+            name: teacherName,
+            icNumber: icNumber,
+            phoneNumber: teacherPhoneNumber,
+            baseSalary: parseFloat(salary),
+            address: homeAddress,
+        },
+        bankAccount: {
+            name: "",
+            accountNumber: "",
+        },
+        examination: {
+            name: "spm",
+            session: 1,
+            year: getCurrentYear(),
+        },
+        invigilation: {
+            role: "invigilator",
+            centerCode: "",
+            morningSessions: 0,
+            afternoonSessions: 0,
+        },
+        totalAllowance: 0.0,
+        stationeryExpenses: 0,
+    };
 
-const CompetencyAllowanceForm = () => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
     const {
@@ -69,9 +71,9 @@ const CompetencyAllowanceForm = () => {
     const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
         onSuccess: (data) => {
             toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Competency allowance claim is submitted" });
-            queryClient.invalidateQueries("allowanceClaims");
             reset();
-            fileUploadRef.clear();
+            fileUploadRef.current.clear();
+            queryClient.invalidateQueries("allowanceClaims");
             /** To optimize/improve invalidate query */
         },
         onError: (error) => {

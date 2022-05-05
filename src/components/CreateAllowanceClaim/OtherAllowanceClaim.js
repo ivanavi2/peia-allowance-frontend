@@ -19,47 +19,48 @@ const examinationNameOptions = [
     { label: "Malaysian University English Test (MUET)", value: "muet" },
 ];
 
-const formDefaultValues = {
-    allowanceType: "OtherAllowance",
-    invigilator: {
-        name: "Ivan",
-        icNumber: "980225075123",
-        phoneNumber: "0164912966",
-        baseSalary: 1500,
-        address: "Blok 2, 10-7, Tingkat Paya Terubong 2, 11050, Pulau Pinang",
-    },
-    bankAccount: {
-        name: "",
-        accountNumber: "",
-    },
-    examination: {
-        name: "spm",
-        session: 1,
-        year: getCurrentYear(),
-    },
-    invigilation: {
-        centerCode: "",
-    },
-    expenses: {
-        food: 0.0,
-        lodging: {
-            days: 0,
-            total: 0.0,
+const OtherAllowanceForm = ({ user }) => {
+    const { teacherName, icNumber, teacherPhoneNumber, salary, homeAddress } = user;
+    const formDefaultValues = {
+        user: user._id,
+        allowanceType: "OtherAllowance",
+        invigilator: {
+            name: teacherName,
+            icNumber: icNumber,
+            phoneNumber: teacherPhoneNumber,
+            baseSalary: parseFloat(salary),
+            address: homeAddress,
         },
-        hotel: {
-            days: 0,
-            total: 0,
+        bankAccount: {
+            name: "",
+            accountNumber: "",
         },
-        tolTouchnGo: 0.0,
-        parking: 0.0,
-        dobby: 0.0,
-        telephoneFax: 0.0,
-        publicTransport: 0.0,
-    },
-    totalAllowance: 0.0,
-};
-
-const OtherAllowanceForm = () => {
+        examination: {
+            name: "spm",
+            session: 1,
+            year: getCurrentYear(),
+        },
+        invigilation: {
+            centerCode: "",
+        },
+        expenses: {
+            food: 0.0,
+            lodging: {
+                days: 0,
+                total: 0.0,
+            },
+            hotel: {
+                days: 0,
+                total: 0,
+            },
+            tolTouchnGo: 0.0,
+            parking: 0.0,
+            dobby: 0.0,
+            telephoneFax: 0.0,
+            publicTransport: 0.0,
+        },
+        totalAllowance: 0.0,
+    };
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
     const {
@@ -74,12 +75,12 @@ const OtherAllowanceForm = () => {
     });
     const queryClient = useQueryClient();
 
-    const { data, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+    const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
         onSuccess: (data) => {
             toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Travel allowance claim is submitted" });
-            queryClient.invalidateQueries("allowanceClaims");
+            fileUploadRef.current.clear();
             reset();
-            fileUploadRef.clear();
+            queryClient.invalidateQueries("allowanceClaims");
             /** To optimize/improve invalidate query */
         },
         onError: (error) => {

@@ -5,6 +5,29 @@ import { InputText } from "primereact/inputtext";
 const OtherAllowanceClaimDetail = ({ allowanceClaim }) => {
     return (
         <div className="p-fluid formgrid grid custom-scrollbar">
+            <div className="col-12 mb-1">
+                <h5>Personal Information</h5>
+            </div>
+            <div className="field col-12 md:col-6">
+                <label htmlFor="invigilator.name">Name</label>
+                <InputText id="invigilator.name" value={allowanceClaim.invigilator.name} disabled />
+            </div>
+            <div className="field col-12 md:col-6">
+                <label htmlFor="invigilator.icNumber">IC Number</label>
+                <InputText id="invigilator.icNumber" value={allowanceClaim.invigilator.icNumber} disabled />
+            </div>
+            <div className="field col-12 md:col-6">
+                <label htmlFor="invigilator.phoneNumber">Phone Number</label>
+                <InputText id="invigilator.phoneNumber" value={allowanceClaim.invigilator.phoneNumber} disabled />
+            </div>
+            <div className="field col-12 md:col-6">
+                <label htmlFor="invigilator.baseSalary">Base Salary</label>
+                <InputNumber value={allowanceClaim.invigilator.baseSalary} inputId="invigilator.baseSalary" mode="decimal" useGrouping={false} disabled />
+            </div>
+            <div className="field col-12">
+                <label htmlFor="invigilator.name">Address</label>
+                <InputText id="invigilator.address" value={allowanceClaim.invigilator.address} disabled />
+            </div>
             <div className="col-12 mt-4 mb-1">
                 <h5>Bank Account Information</h5>
             </div>
