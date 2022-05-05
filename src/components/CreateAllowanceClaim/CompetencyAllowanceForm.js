@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
@@ -7,11 +7,12 @@ import { useForm, Controller } from "react-hook-form";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
 import { Toast } from "primereact/toast";
-import { useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
 import { getCurrentYear } from "../../utils/date";
+import AllowanceRateService from "../../service/AllowanceRateService";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -56,6 +57,7 @@ const CompetencyAllowanceForm = ({ user }) => {
 
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
     const {
         control,
         formState: { errors },
@@ -68,16 +70,12 @@ const CompetencyAllowanceForm = ({ user }) => {
     });
     const queryClient = useQueryClient();
 
-    const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
-        onSuccess: (data) => {
-            toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Competency allowance claim is submitted" });
-            reset();
-            fileUploadRef.current.clear();
-            queryClient.invalidateQueries("allowanceClaims");
-            /** To optimize/improve invalidate query */
-        },
+    const {
+        isLoading: isLoadingAllowanceRate,
+        isError: isErrorAllowanceRate,
+        data: allowanceRateData,
+    } = useQuery(["allowanceRate", "CompetencyAllowance"], () => AllowanceRateService.getAllowanceRateByAllowanceType("CompetencyAllowance"), {
         onError: (error) => {
-            console.log("onerror", error.response);
             if (error.response.status === 401) {
                 toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
                 return;
@@ -86,15 +84,35 @@ const CompetencyAllowanceForm = ({ user }) => {
         },
     });
 
+    const competencyAllowanceRates = allowanceRateData?.allowanceRates?.rates ?? [];
+    /* Transform the allowance rates from array of objects to key value pairs {ALLOWANCE_RATE_CODE: RATE, ...}*/
+    const competencyAllowanceRatesObject = competencyAllowanceRates.reduce((obj, item) => ((obj[item.code] = item.rate), obj), {});
+
+    const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+        onSuccess: () => {
+            toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Competency allowance claim is submitted" });
+            reset();
+            fileUploadRef.current.clear();
+            queryClient.invalidateQueries("allowanceClaims");
+            /** To optimize/improve invalidate query */
+        },
+        onError: (error) => {
+            if (error.response.status === 401) return toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response?.data?.error?.message });
+            if (error.response) return toastRef.current.show({ severity: "error", summary: error.response.data?.message });
+            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
+        },
+    });
+
     const calculateTotalEligibleAllowance = () => {
         const baseRatePerSession = {
-            morningSession: 20,
-            afternoonSession: 30,
+            morningSession: competencyAllowanceRatesObject["PER_MORNING_SESSION_BONUS_MYR"],
+            afternoonSession: competencyAllowanceRatesObject["PER_AFTERNOON_SESSION_BONUS_MYR"],
         };
         const baseRateByRole = {
-            headOfInvigilator: 1.15,
-            invigilator: 1.05,
+            headOfInvigilator: competencyAllowanceRatesObject["HEAD_OF_INVIGILATOR_MULTIPLIER"],
+            invigilator: competencyAllowanceRatesObject["INVIGILATOR_MULTIPLIER"],
         };
+
         const [morningSessions, afternoonSessions, invigilationRole] = getValues(["invigilation.morningSessions", "invigilation.afternoonSessions", "invigilation.role"]);
         const allowance = (morningSessions * baseRatePerSession["morningSession"] + afternoonSessions * baseRatePerSession["afternoonSession"]) * baseRateByRole[invigilationRole];
         return allowance;
@@ -106,9 +124,9 @@ const CompetencyAllowanceForm = ({ user }) => {
                 const { files } = event;
                 const formData = getValues();
 
-                console.log(formData);
-
+                setIsUploading(true);
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
+                setIsUploading(false);
 
                 if (!uploadAttachmentsResponse.status) {
                     toastRef.current.show({ severity: "error", summary: uploadAttachmentsResponse.summary, detail: uploadAttachmentsResponse.detail });
@@ -379,7 +397,7 @@ const CompetencyAllowanceForm = ({ user }) => {
                     </div>
 
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit"></Button>
+                        <Button label="Submit" type="submit" loading={isLoadingAllowanceRate || isUploading || isLoadingAddAllowanceClaim} disabled={isErrorAllowanceRate}></Button>
                     </div>
                 </div>
             </form>

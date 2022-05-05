@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
@@ -63,6 +63,7 @@ const OtherAllowanceForm = ({ user }) => {
     };
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
     const {
         control,
         formState: { errors },
@@ -75,8 +76,8 @@ const OtherAllowanceForm = ({ user }) => {
     });
     const queryClient = useQueryClient();
 
-    const { mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
-        onSuccess: (data) => {
+    const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {
+        onSuccess: () => {
             toastRef.current.show({ severity: "success", summary: "Submit success!", detail: "Travel allowance claim is submitted" });
             fileUploadRef.current.clear();
             reset();
@@ -84,11 +85,8 @@ const OtherAllowanceForm = ({ user }) => {
             /** To optimize/improve invalidate query */
         },
         onError: (error) => {
-            console.log("onerror", error.response);
-            if (error.response.status === 401) {
-                toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
-                return;
-            }
+            if (error.response.status === 401) return toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response?.data?.error?.message });
+            if (error.response) return toastRef.current.show({ severity: "error", summary: error.response.data?.message });
             toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
         },
     });
@@ -105,10 +103,10 @@ const OtherAllowanceForm = ({ user }) => {
             try {
                 const { files } = event;
                 const formData = getValues();
-                console.log("formData", formData);
 
+                setIsUploading(true);
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
-                console.log("uploadattachmentresponse", uploadAttachmentsResponse);
+                setIsUploading(false);
 
                 if (!uploadAttachmentsResponse.status) {
                     toastRef.current.show({ severity: "error", summary: uploadAttachmentsResponse.summary, detail: uploadAttachmentsResponse.detail });
@@ -498,7 +496,7 @@ const OtherAllowanceForm = ({ user }) => {
                     </div>
 
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit"></Button>
+                        <Button label="Submit" type="submit" loading={isLoadingAddAllowanceClaim || isUploading}></Button>
                     </div>
                 </div>
             </form>

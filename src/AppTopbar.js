@@ -4,13 +4,15 @@ import { OverlayPanel } from "primereact/overlaypanel";
 import { Button } from "primereact/button";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import useAuth from "./CustomHooks/useAuth";
+
 export const AppTopbar = (props) => {
     const profileButtonOverlayRef = useRef(null);
     const location = useLocation();
     const navigate = useNavigate();
+    const { signOut } = useAuth();
     const onSignOutClicked = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
+        signOut();
         navigate("/login", { state: { from: location }, replace: true });
     };
     return (

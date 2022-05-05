@@ -35,8 +35,8 @@ const OtherAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     });
     const queryClient = useQueryClient();
 
-    const { isLoading, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
-        onSuccess: (data) => {
+    const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
+        onSuccess: () => {
             toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
             queryClient.invalidateQueries("allowanceClaims");
             fileUploadRef.clear();
@@ -460,7 +460,7 @@ const OtherAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
                     </div>
 
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit" loading={isLoading || isUploading}></Button>
+                        <Button label="Submit" type="submit" loading={isLoadingAddAllowanceClaim || isUploading}></Button>
                     </div>
                 </div>
             </form>

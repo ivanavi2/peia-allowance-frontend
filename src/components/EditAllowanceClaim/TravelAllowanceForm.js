@@ -10,11 +10,12 @@ import { FileUpload } from "primereact/fileupload";
 import { Toast } from "primereact/toast";
 import { AutoComplete } from "primereact/autocomplete";
 import usePlacesAutocomplete from "use-places-autocomplete";
-import { useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 
 import fetchDistance from "../../utils/fetchDistance";
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
+import AllowanceRateService from "../../service/AllowanceRateService";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -39,6 +40,7 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isFetchingDistance, setIsFetchingDistance] = useState(false);
     const {
         control,
         formState: { errors },
@@ -53,7 +55,25 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     });
     const queryClient = useQueryClient();
 
-    const { isLoading, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
+    const {
+        isLoading: isLoadingAllowanceRate,
+        isError: isErrorAllowanceRate,
+        data: allowanceRateData,
+    } = useQuery(["allowanceRate", "TravelAllowance"], () => AllowanceRateService.getAllowanceRateByAllowanceType("TravelAllowance"), {
+        onError: (error) => {
+            if (error.response.status === 401) {
+                toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
+                return;
+            }
+            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
+        },
+    });
+
+    const competencyAllowanceRates = allowanceRateData?.allowanceRates?.rates ?? [];
+    /* Transform the allowance rates from array of objects to key value pairs {ALLOWANCE_RATE_CODE: RATE, ...}*/
+    const competencyAllowanceRatesObject = competencyAllowanceRates.reduce((obj, item) => ((obj[item.code] = item.rate), obj), {});
+
+    const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: (data) => {
             toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
             queryClient.invalidateQueries("allowanceClaims");
@@ -61,8 +81,9 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
             /** To optimize/improve invalidate query */
         },
         onError: (error) => {
-            console.log("onerror", error.response);
-            if (error.response) toastRef.current.show({ severity: "error", summary: error.response.data?.message });
+            if (error.response.status === 401) return toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response?.data?.error?.message });
+            if (error.response) return toastRef.current.show({ severity: "error", summary: error.response.data?.message });
+            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
         },
     });
 
@@ -82,7 +103,7 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     ]);
 
     const {
-        suggestions: { status, data },
+        suggestions: { loading: isLoadingAutoCompleteSuggestions, status, data },
         setValue: setPlacesAutocompleteValue,
     } = usePlacesAutocomplete({
         requestOptions: {
@@ -93,21 +114,23 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
 
     const calculateTotalEligibleAllowance = useCallback(() => {
         const baseRateMultiplier = {
-            car: 0.3,
-            motorcycle: 0.15,
+            car: competencyAllowanceRatesObject["CAR_MULTIPLIER"],
+            motorcycle: competencyAllowanceRatesObject["MOTORCYCLE_MULTIPLIER"],
         };
         /* totalEligibleAllowance = 
             30days * Distance between home and invigilation center * Vehicle base rate multipler per km
-            + (RM100 base + RM50 additional * distance between home and examination vault)
-            + (RM100 base + RM50 additional * (distance between school and inivigilation center + distance between school and examination vault))
+            + (RM50 base + RM10 additional bonus per km * distance between home and examination vault)
+            + (RM60 base + RM10 additional bonus per km* (distance between school and inivigilation center + distance between school and examination vault))
          */
         const totalEligibleAllowance =
             30 * watchedDistanceBetweenHomeAndInvigilationCenter * baseRateMultiplier[watchedVehicleType] +
-            (50 + 10 * watchedDistanceBetweenHomeAndExaminationVault) +
-            (50 + 10 * (watchedDistanceBetweenSchoolAndInvigilationCenter + watchedDistanceBetweenSchoolAndExaminationVault));
+            (competencyAllowanceRatesObject["BASE_TRAVEL_BONUS"] + competencyAllowanceRatesObject["BASE_TRAVEL_BONUS"] * watchedDistanceBetweenHomeAndExaminationVault) +
+            (competencyAllowanceRatesObject["BASE_TRAVEL_BONUS"] +
+                competencyAllowanceRatesObject["BASE_TRAVEL_BONUS"] * (watchedDistanceBetweenSchoolAndInvigilationCenter + watchedDistanceBetweenSchoolAndExaminationVault));
 
         return totalEligibleAllowance;
     }, [
+        competencyAllowanceRatesObject,
         watchedDistanceBetweenHomeAndInvigilationCenter,
         watchedVehicleType,
         watchedDistanceBetweenHomeAndExaminationVault,
@@ -143,7 +166,11 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
         setValue(`${parentField}.placeId`, event.value.placeId);
         setPlacesAutocompleteValue(event.value.description, false);
         const placesId = getValues(["homeAddress.placeId", "schoolAddress.placeId", "invigilationCenterAddress.placeId", "examinationVaultAddress.placeId"]);
+
+        setIsFetchingDistance(true);
         const results = await fetchDistance(placesId, fieldName);
+        setIsFetchingDistance(false);
+
         results.forEach((result) => {
             setValue(result.setDistanceFieldName, parseFloat(result.distance));
         });
@@ -584,7 +611,11 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
                         <span className="m-2 font-bold text-sm">*Max 3 files can be uploaded, max file size is 1MB, accepted file types are .jpg, .png, .jpeg and .pdf</span>
                     </div>
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit" loading={isLoading || isUploading}></Button>
+                        <Button
+                            label="Submit"
+                            type="submit"
+                            loading={isLoadingAddAllowanceClaim || isLoadingAllowanceRate || isUploading || isLoadingAutoCompleteSuggestions || isFetchingDistance}
+                        ></Button>
                     </div>
                 </div>
             </form>

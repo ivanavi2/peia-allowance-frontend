@@ -7,9 +7,10 @@ import { useForm, Controller } from "react-hook-form";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
 import { Toast } from "primereact/toast";
-import { useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 
 import AllowanceClaimService from "../../service/AllowanceClaimService";
+import AllowanceRateService from "../../service/AllowanceRateService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
 
 const examinationNameOptions = [
@@ -39,16 +40,35 @@ const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     });
     const queryClient = useQueryClient();
 
-    const { mutate, isLoading } = useMutation(AllowanceClaimService.editAllowanceClaim, {
-        onSuccess: (data) => {
+    const {
+        isLoading: isLoadingAllowanceRate,
+        isError: isErrorAllowanceRate,
+        data: allowanceRateData,
+    } = useQuery(["allowanceRate", "CompetencyAllowance"], () => AllowanceRateService.getAllowanceRateByAllowanceType("CompetencyAllowance"), {
+        onError: (error) => {
+            if (error.response.status === 401) {
+                toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
+                return;
+            }
+            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
+        },
+    });
+
+    const competencyAllowanceRates = allowanceRateData?.allowanceRates?.rates ?? [];
+    /* Transform the allowance rates from array of objects to key value pairs {ALLOWANCE_RATE_CODE: RATE, ...}*/
+    const competencyAllowanceRatesObject = competencyAllowanceRates.reduce((obj, item) => ((obj[item.code] = item.rate), obj), {});
+
+    const { mutate, isLoading: isLoadingAddAllowanceClaim } = useMutation(AllowanceClaimService.editAllowanceClaim, {
+        onSuccess: () => {
             toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
             queryClient.invalidateQueries("allowanceClaims");
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },
         onError: (error) => {
-            console.log("onerror", error.response);
-            if (error.response) toastRef.current.show({ severity: "error", summary: error.response.data?.message });
+            if (error.response.status === 401) return toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response?.data?.error?.message });
+            if (error.response) return toastRef.current.show({ severity: "error", summary: error.response.data?.message });
+            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
         },
     });
 
@@ -72,7 +92,6 @@ const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
                 const { files } = event;
                 const formData = getValues();
 
-                console.log(formData);
                 setIsUploading(true);
                 const uploadAttachmentsResponse = await handleAttachmentUpload(files);
                 setIsUploading(false);
@@ -352,7 +371,7 @@ const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
                     </div>
 
                     <div className="md:col-3 my-2 ml-2 md:ml-0">
-                        <Button label="Submit" type="submit" loading={isLoading || isUploading}></Button>
+                        <Button label="Submit" type="submit" loading={isLoadingAllowanceRate || isUploading || isLoadingAddAllowanceClaim} disabled={isErrorAllowanceRate}></Button>
                     </div>
                 </div>
             </form>
