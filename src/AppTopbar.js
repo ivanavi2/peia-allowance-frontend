@@ -2,18 +2,14 @@ import React, { useRef } from "react";
 import classNames from "classnames";
 import { OverlayPanel } from "primereact/overlaypanel";
 import { Button } from "primereact/button";
-import { useLocation, useNavigate } from "react-router-dom";
 
 import useAuth from "./CustomHooks/useAuth";
 
 export const AppTopbar = (props) => {
     const profileButtonOverlayRef = useRef(null);
-    const location = useLocation();
-    const navigate = useNavigate();
     const { signOut } = useAuth();
     const onSignOutClicked = () => {
         signOut();
-        navigate("/login", { state: { from: location }, replace: true });
     };
     return (
         <div className="layout-topbar">

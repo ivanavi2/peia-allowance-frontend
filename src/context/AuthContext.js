@@ -36,6 +36,9 @@ export const AuthProvider = ({ children }) => {
                 data: { token, user },
             } = await AuthService.login({ login, password });
 
+            localStorage.setItem("token", token);
+            localStorage.setItem("userId", user._id);
+
             if (user.userGroup === "Teacher") {
                 const { teacher } = await TeacherService.getTeacherByUser(user._id);
                 setUser({ ...user, ...teacher });
@@ -43,8 +46,6 @@ export const AuthProvider = ({ children }) => {
                 setUser(user);
             }
 
-            localStorage.setItem("token", token);
-            localStorage.setItem("userId", user._id);
             navigate(from, { replace: true });
         } catch (error) {
             if (error.response) {
@@ -66,9 +67,21 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("userId");
         setUser(null);
         setError(null);
+        navigate("/login", { state: { from: location }, replace: true });
     };
 
-    let value = { user, signIn, signOut, error, isLoading };
+    const redirectLogin = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        setUser(null);
+        setError({
+            message: "Please login again!",
+            detail: "Session expired or something went wrong",
+        });
+        navigate("/login", { state: { from: location }, replace: true });
+    };
+
+    let value = { user, signIn, signOut, error, isLoading, redirectLogin };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

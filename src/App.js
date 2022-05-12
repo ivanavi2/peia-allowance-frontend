@@ -2,6 +2,8 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { useQuery } from "react-query";
 
+import ResponseInterceptor from "./components/ResponseInterceptor";
+
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./components/Dashboard";
 import ButtonDemo from "./components/ButtonDemo";
@@ -42,6 +44,7 @@ import { AuthProvider } from "./context/AuthContext";
 const App = () => {
     return (
         <AuthProvider>
+            <ResponseInterceptor />
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<AdminLayout />}>
