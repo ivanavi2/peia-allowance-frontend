@@ -2,9 +2,9 @@ import React from "react";
 
 import { DataTable as PrimeReactDataTable } from "primereact/datatable";
 
-const DataTable = ({ data, columns }) => {
+const DataTable = ({ data, columns, header }) => {
     return (
-        <PrimeReactDataTable value={data} paginator rows={10} responsiveLayout="scroll">
+        <PrimeReactDataTable value={data} paginator rows={10} responsiveLayout="scroll" header={header}>
             {columns}
         </PrimeReactDataTable>
     );

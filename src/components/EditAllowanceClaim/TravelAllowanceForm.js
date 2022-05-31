@@ -16,6 +16,7 @@ import fetchDistance from "../../utils/fetchDistance";
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
 import AllowanceRateService from "../../service/AllowanceRateService";
+import useAuth from "../../CustomHooks/useAuth";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -39,6 +40,7 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const [displayCalculationModal, setDisplayCalculationModal] = useState(false);
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const { user } = useAuth();
     const [isUploading, setIsUploading] = useState(false);
     const [isFetchingDistance, setIsFetchingDistance] = useState(false);
     const {
@@ -76,7 +78,7 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: (data) => {
             toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
-            queryClient.invalidateQueries("allowanceClaims");
+            user.userGroup === "Teacher" ? queryClient.invalidateQueries(["allowanceClaimsByUser", user._id]) : queryClient.invalidateQueries("allowanceClaims");
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },

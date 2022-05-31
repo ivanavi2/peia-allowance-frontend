@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "react-query";
 
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
+import useAuth from "../../CustomHooks/useAuth";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -21,6 +22,7 @@ const examinationNameOptions = [
 const OtherAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const { user } = useAuth();
     const [isUploading, setIsUploading] = useState(false);
     const {
         control,
@@ -38,7 +40,7 @@ const OtherAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: () => {
             toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
-            queryClient.invalidateQueries("allowanceClaims");
+            user.userGroup === "Teacher" ? queryClient.invalidateQueries(["allowanceClaimsByUser", user._id]) : queryClient.invalidateQueries("allowanceClaims");
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },

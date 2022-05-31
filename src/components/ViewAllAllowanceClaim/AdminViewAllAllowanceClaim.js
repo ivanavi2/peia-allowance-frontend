@@ -21,6 +21,10 @@ import EditTravelAllowanceForm from "../EditAllowanceClaim/TravelAllowanceForm";
 import EditOtherAllowanceForm from "../EditAllowanceClaim/OtherAllowanceForm";
 import Spinner from "../Spinner";
 import DataTable from "../DataTable";
+import TableExportHeader from "./TableExportHeader";
+import exportAllowanceClaimExcel from "../../utils/exportAllowanceClaimExcel";
+import { exportAdminAllowanceClaimPDF } from "../../utils/exportAllowanceClaimPDF";
+import { transformAdminAllowanceClaimExportArray } from "../../utils/transformAllowanceClaimExportArray";
 
 const statuses = [
     { label: "All Status", value: null },
@@ -100,6 +104,27 @@ const AdminViewAllAllowanceClaim = () => {
     const allowanceClaims = data?.allowanceClaims;
     const [displayModal, setDisplayModal] = useState(false);
     const [currentSelectedAllowanceClaim, setCurrentSelectedAllowanceClaim] = useState({});
+
+    const onExportExcel = () => {
+        const datetime = new Date();
+        const fileName = `allowanceClaims_export_${format(datetime, "ddMMyyyy_HHmm")}`;
+        const allowanceClaimExportArray = transformAdminAllowanceClaimExportArray(data.allowanceClaims);
+
+        const exportResult = exportAllowanceClaimExcel(allowanceClaimExportArray, fileName);
+
+        if (!exportResult.status) toastRef.current.show({ severity: "error", summary: exportResult.summary, detail: exportResult.detail });
+    };
+
+    /** Only exports all allowance claims sorted by last updated at for now */
+    const onExportPDF = () => {
+        const datetime = new Date();
+        const fileName = `allowanceClaims_export_${format(datetime, "ddMMyyyy_HHmm")}`;
+        const allowanceClaimExportArray = transformAdminAllowanceClaimExportArray(data.allowanceClaims);
+
+        const exportResult = exportAdminAllowanceClaimPDF(allowanceClaimExportArray, fileName);
+
+        if (!exportResult.status) toastRef.current.show({ severity: "error", summary: exportResult.summary, detail: exportResult.detail });
+    };
 
     const totalAllowanceClaimBodyTemplate = (rowData) => {
         return parseFloat(rowData.totalAllowance).toFixed(2);
@@ -222,7 +247,7 @@ const AdminViewAllAllowanceClaim = () => {
         if (currentSelectedAllowanceClaim.allowanceType === "OtherAllowance") {
             return <OtherAllowanceClaimDetail allowanceClaim={currentSelectedAllowanceClaim} />;
         }
-        return <h5>No details available</h5>;
+        return <h6>No details available</h6>;
     };
 
     const displayEditAllowanceClaimForm = () => {
@@ -235,7 +260,7 @@ const AdminViewAllAllowanceClaim = () => {
         if (currentSelectedAllowanceClaim.allowanceType === "OtherAllowance") {
             return <EditOtherAllowanceForm allowanceClaim={currentSelectedAllowanceClaim} setDisplayModal={setDisplayModal} />;
         }
-        return <h5>No details available</h5>;
+        return <h6>No details available</h6>;
     };
 
     const matchModes = [{ label: "Equals", value: FilterMatchMode.EQUALS }];
@@ -318,7 +343,9 @@ const AdminViewAllAllowanceClaim = () => {
                     <h5 className="mb-4">View All Allowance Claim</h5>
                     {isError && <h5 className="mb-4">Something went wrong</h5>}
                     {isLoading && <Spinner />}
-                    {!isLoading && !isError && <DataTable data={allowanceClaims} columns={tableColumns}></DataTable>}
+                    {!isLoading && !isError && (
+                        <DataTable data={allowanceClaims} columns={tableColumns} header={<TableExportHeader onExportPDF={onExportPDF} onExportExcel={onExportExcel} />}></DataTable>
+                    )}
                     <Dialog header="Attachments" visible={displayModal === "attachmentsModal"} style={{ width: "70vw" }} onHide={() => setDisplayModal(false)}>
                         <div className="flex">{displayAttachments()}</div>
                     </Dialog>

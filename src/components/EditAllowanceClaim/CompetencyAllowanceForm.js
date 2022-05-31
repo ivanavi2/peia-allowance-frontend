@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "react-query";
 import AllowanceClaimService from "../../service/AllowanceClaimService";
 import AllowanceRateService from "../../service/AllowanceRateService";
 import handleAttachmentUpload from "../../utils/handleAttachmentUpload";
+import useAuth from "../../CustomHooks/useAuth";
 
 const examinationNameOptions = [
     { label: "Sijil Pelajaran Malaysia (SPM)", value: "spm" },
@@ -26,6 +27,7 @@ const roleOptions = [
 const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
+    const { user } = useAuth();
     const [isUploading, setIsUploading] = useState(false);
     const {
         control,
@@ -61,7 +63,7 @@ const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const { mutate, isLoading: isLoadingAddAllowanceClaim } = useMutation(AllowanceClaimService.editAllowanceClaim, {
         onSuccess: () => {
             toastRef.current.show({ life: 1500, severity: "success", summary: "Submit success!", detail: "Competency allowance claim is successfully edited" });
-            queryClient.invalidateQueries("allowanceClaims");
+            user.userGroup === "Teacher" ? queryClient.invalidateQueries(["allowanceClaimsByUser", user._id]) : queryClient.invalidateQueries("allowanceClaims");
             fileUploadRef.clear();
             /** To optimize/improve invalidate query */
         },
@@ -74,13 +76,14 @@ const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
 
     const calculateTotalEligibleAllowance = () => {
         const baseRatePerSession = {
-            morningSession: 20,
-            afternoonSession: 30,
+            morningSession: competencyAllowanceRatesObject["PER_MORNING_SESSION_BONUS_MYR"],
+            afternoonSession: competencyAllowanceRatesObject["PER_AFTERNOON_SESSION_BONUS_MYR"],
         };
         const baseRateByRole = {
-            headOfInvigilator: 1.15,
-            invigilator: 1.05,
+            headOfInvigilator: competencyAllowanceRatesObject["HEAD_OF_INVIGILATOR_MULTIPLIER"],
+            invigilator: competencyAllowanceRatesObject["INVIGILATOR_MULTIPLIER"],
         };
+
         const [morningSessions, afternoonSessions, invigilationRole] = getValues(["invigilation.morningSessions", "invigilation.afternoonSessions", "invigilation.role"]);
         const allowance = (morningSessions * baseRatePerSession["morningSession"] + afternoonSessions * baseRatePerSession["afternoonSession"]) * baseRateByRole[invigilationRole];
         return allowance;

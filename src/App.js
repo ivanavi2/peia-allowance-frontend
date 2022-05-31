@@ -32,6 +32,7 @@ import TimelineDemo from "./pages/TimelineDemo";
 import CreateAllowanceClaim from "./pages/CreateAllowanceClaim";
 import ViewAllAllowanceClaim from "./pages/ViewAllAllowanceClaim";
 import ViewAllowanceRateConfiguration from "./pages/ViewAllowanceRateConfiguration";
+import ViewAllInvigilator from "./pages/ViewAllInvigilator";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import Error from "./pages/Error";
@@ -77,6 +78,14 @@ const App = () => {
                         element={
                             <ProtectedRoute roles={["Admin"]}>
                                 <ViewAllowanceRateConfiguration />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/viewAllInvigilator"
+                        element={
+                            <ProtectedRoute roles={["Admin"]}>
+                                <ViewAllInvigilator />
                             </ProtectedRoute>
                         }
                     />

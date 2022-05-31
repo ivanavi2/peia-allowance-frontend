@@ -146,6 +146,16 @@ const AdminLayout = () => {
             ],
         },
         {
+            label: "Invigilator",
+            items: [
+                {
+                    label: "View All Invigilator",
+                    icon: "fa-solid fa-chalkboard-user",
+                    to: "/viewAllInvigilator",
+                },
+            ],
+        },
+        {
             label: "Allowance Claim",
             icon: "pi pi-fw pi-sitemap",
             items: [

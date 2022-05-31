@@ -22,6 +22,11 @@ import EditTravelAllowanceForm from "../EditAllowanceClaim/TravelAllowanceForm";
 import EditOtherAllowanceForm from "../EditAllowanceClaim/OtherAllowanceForm";
 import Spinner from "../Spinner";
 import DataTable from "../DataTable";
+import generateAllowanceClaimDocumentPDF from "../../utils/generateAllowanceClaimDocumentPDF";
+import TableExportHeader from "./TableExportHeader";
+import exportAllowanceClaimExcel from "../../utils/exportAllowanceClaimExcel";
+import { exportInvigilatorAllowanceClaimPDF } from "../../utils/exportAllowanceClaimPDF";
+import { transformInvigilatorAllowanceClaimExportArray } from "../../utils/transformAllowanceClaimExportArray";
 
 const statuses = [
     { label: "All Status", value: null },
@@ -84,6 +89,36 @@ const InvigilatorViewAllAllowanceClaim = () => {
     const [displayModal, setDisplayModal] = useState(false);
     const [currentSelectedAllowanceClaim, setCurrentSelectedAllowanceClaim] = useState({});
 
+    const onGeneratePDF = async (rowData, userData) => {
+        const datetime = new Date();
+        const fileName = `${rowData._id}_${format(datetime, "ddMMyyyy_HHmm")}`;
+        const generatePDFResponse = await generateAllowanceClaimDocumentPDF(rowData, userData, fileName);
+        if (!generatePDFResponse.status) {
+            toastRef.current.show({ severity: "error", summary: generatePDFResponse.summary, detail: generatePDFResponse.detail });
+        }
+    };
+
+    const onExportExcel = () => {
+        const datetime = new Date();
+        const fileName = `allowanceClaims_export_${format(datetime, "ddMMyyyy_HHmm")}`;
+        const allowanceClaimExportArray = transformInvigilatorAllowanceClaimExportArray(data.allowanceClaims);
+
+        const exportResult = exportAllowanceClaimExcel(allowanceClaimExportArray, fileName);
+
+        if (!exportResult.status) toastRef.current.show({ severity: "error", summary: exportResult.summary, detail: exportResult.detail });
+    };
+
+    /** Only exports all allowance claims sorted by last updated at for now */
+    const onExportPDF = () => {
+        const datetime = new Date();
+        const fileName = `allowanceClaims_export_${format(datetime, "ddMMyyyy_HHmm")}`;
+        const allowanceClaimExportArray = transformInvigilatorAllowanceClaimExportArray(data.allowanceClaims);
+
+        const exportResult = exportInvigilatorAllowanceClaimPDF(allowanceClaimExportArray, fileName);
+
+        if (!exportResult.status) toastRef.current.show({ severity: "error", summary: exportResult.summary, detail: exportResult.detail });
+    };
+
     const totalAllowanceClaimBodyTemplate = (rowData) => {
         return parseFloat(rowData.totalAllowance).toFixed(2);
     };
@@ -121,15 +156,18 @@ const InvigilatorViewAllAllowanceClaim = () => {
 
     const actionsBodyTemplate = (rowData) => {
         return (
-            <Button
-                className="p-1 m-1 text-sm"
-                icon="fa-solid fa-pen-to-square"
-                disabled={rowData.status !== 1}
-                onClick={() => {
-                    setDisplayModal("editAllowanceModal");
-                    setCurrentSelectedAllowanceClaim(rowData);
-                }}
-            />
+            <div className="flex flex-row">
+                <Button
+                    className="p-1 m-1 text-lg"
+                    icon="fa-solid fa-pen-to-square"
+                    disabled={rowData.status !== 1}
+                    onClick={() => {
+                        setDisplayModal("editAllowanceModal");
+                        setCurrentSelectedAllowanceClaim(rowData);
+                    }}
+                />
+                <Button className="p-1 m-1 text-lg" icon="fa-solid fa-file-pdf" onClick={() => onGeneratePDF(rowData, user)} />
+            </div>
         );
     };
 
@@ -184,7 +222,7 @@ const InvigilatorViewAllAllowanceClaim = () => {
         if (currentSelectedAllowanceClaim.allowanceType === "OtherAllowance") {
             return <OtherAllowanceClaimDetail allowanceClaim={currentSelectedAllowanceClaim} />;
         }
-        return <h5>No details available</h5>;
+        return <h6>No details available</h6>;
     };
 
     const displayEditAllowanceClaimForm = () => {
@@ -197,7 +235,7 @@ const InvigilatorViewAllAllowanceClaim = () => {
         if (currentSelectedAllowanceClaim.allowanceType === "OtherAllowance") {
             return <EditOtherAllowanceForm allowanceClaim={currentSelectedAllowanceClaim} setDisplayModal={setDisplayModal} />;
         }
-        return <h5>No details available</h5>;
+        return <h6>No details available</h6>;
     };
 
     const matchModes = [{ label: "Equals", value: FilterMatchMode.EQUALS }];
@@ -277,7 +315,9 @@ const InvigilatorViewAllAllowanceClaim = () => {
                     <h5 className="mb-4">View All Allowance Claim</h5>
                     {isError && <h5 className="mb-4">Something went wrong</h5>}
                     {isLoading && <Spinner />}
-                    {!isLoading && !isError && <DataTable data={allowanceClaims} columns={tableColumns}></DataTable>}
+                    {!isLoading && !isError && (
+                        <DataTable data={allowanceClaims} columns={tableColumns} header={<TableExportHeader onExportPDF={onExportPDF} onExportExcel={onExportExcel} />}></DataTable>
+                    )}
                     <Dialog header="Attachments" visible={displayModal === "attachmentsModal"} style={{ width: "70vw" }} onHide={() => setDisplayModal(false)}>
                         <div className="flex">{displayAttachments()}</div>
                     </Dialog>
