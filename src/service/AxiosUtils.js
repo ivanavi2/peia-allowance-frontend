@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const client = axios.create({ baseURL: "http://localhost:3001" });
+export const client = axios.create({ baseURL: process.env.SERVER_BASE_URL });
 
 export const serverClient = ({ ...options }) => {
     client.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
