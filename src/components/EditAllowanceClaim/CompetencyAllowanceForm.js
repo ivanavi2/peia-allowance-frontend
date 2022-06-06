@@ -20,10 +20,13 @@ const examinationNameOptions = [
     { label: "Malaysian University English Test (MUET)", value: "muet" },
 ];
 const roleOptions = [
-    { label: "Head of Invigilator", value: "headOfInvigilator" },
+    { label: "Chief Invigilator", value: "chiefInvigilator" },
+    { label: "Vice Chief Invigilator", value: "viceChiefInvigilator" },
     { label: "Invigilator", value: "invigilator" },
+    { label: "Reserved Invigilator", value: "reservedInvigilator" },
+    { label: "Room Keeper", value: "roomKeeper" },
+    { label: "Environmental Supervisor", value: "environmentalSupervisor" },
 ];
-
 const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     const fileUploadRef = useRef(null);
     const toastRef = useRef(null);
@@ -81,7 +84,11 @@ const CompetencyAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
             afternoonSession: competencyAllowanceRatesObject["PER_AFTERNOON_SESSION_BONUS_MYR"],
         };
         const baseRateByRole = {
-            headOfInvigilator: competencyAllowanceRatesObject["HEAD_OF_INVIGILATOR_MULTIPLIER"],
+            chiefInvigilator: competencyAllowanceRatesObject["CHIEF_INVIGILATOR_MULTIPLIER"],
+            viceChiefInvigilator: competencyAllowanceRatesObject["VICE_CHIEF_INVIGILATOR_MULTIPLIER"],
+            reservedInvigilator: competencyAllowanceRatesObject["RESERVED_INVIGILATOR_MULTIPLIER"],
+            roomKeeper: competencyAllowanceRatesObject["ROOM_KEEPER_MULTIPLIER"],
+            environmentalSupervisor: competencyAllowanceRatesObject["ENVIRONMENTAL_SUPERVISOR_MULTIPLIER"],
             invigilator: competencyAllowanceRatesObject["INVIGILATOR_MULTIPLIER"],
         };
 
