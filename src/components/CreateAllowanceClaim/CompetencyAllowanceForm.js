@@ -90,6 +90,7 @@ const CompetencyAllowanceForm = ({ user }) => {
 
     const competencyAllowanceRates = allowanceRateData?.allowanceRates?.rates ?? [];
     /* Transform the allowance rates from array of objects to key value pairs {ALLOWANCE_RATE_CODE: RATE, ...}*/
+    // eslint-disable-next-line no-sequences
     const competencyAllowanceRatesObject = competencyAllowanceRates.reduce((obj, item) => ((obj[item.code] = item.rate), obj), {});
 
     const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.addAllowanceClaim, {

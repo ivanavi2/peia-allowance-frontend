@@ -57,22 +57,23 @@ const TravelAllowanceForm = ({ allowanceClaim, setDisplayModal }) => {
     });
     const queryClient = useQueryClient();
 
-    const {
-        isLoading: isLoadingAllowanceRate,
-        isError: isErrorAllowanceRate,
-        data: allowanceRateData,
-    } = useQuery(["allowanceRate", "TravelAllowance"], () => AllowanceRateService.getAllowanceRateByAllowanceType("TravelAllowance"), {
-        onError: (error) => {
-            if (error.response.status === 401) {
-                toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
-                return;
-            }
-            toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
-        },
-    });
+    const { isLoading: isLoadingAllowanceRate, data: allowanceRateData } = useQuery(
+        ["allowanceRate", "TravelAllowance"],
+        () => AllowanceRateService.getAllowanceRateByAllowanceType("TravelAllowance"),
+        {
+            onError: (error) => {
+                if (error.response.status === 401) {
+                    toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: error.response.data.error.message });
+                    return;
+                }
+                toastRef.current.show({ severity: "error", summary: "Something went wrong!", detail: "Please try again later" });
+            },
+        }
+    );
 
     const competencyAllowanceRates = allowanceRateData?.allowanceRates?.rates ?? [];
     /* Transform the allowance rates from array of objects to key value pairs {ALLOWANCE_RATE_CODE: RATE, ...}*/
+    // eslint-disable-next-line no-sequences
     const competencyAllowanceRatesObject = competencyAllowanceRates.reduce((obj, item) => ((obj[item.code] = item.rate), obj), {});
 
     const { isLoading: isLoadingAddAllowanceClaim, mutate } = useMutation(AllowanceClaimService.editAllowanceClaim, {

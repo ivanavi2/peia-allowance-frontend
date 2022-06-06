@@ -1,10 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Menu } from "primereact/menu";
-import { Button } from "primereact/button";
-import { Chart } from "primereact/chart";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { ProductService } from "../service/ProductService";
+import React from "react";
 
 import UnlockAccess from "./UnlockAccess";
 import AdminPendingAllowanceClaimCountCard from "./Dashboard/Admin/PendingAllowanceClaimCountCard";
