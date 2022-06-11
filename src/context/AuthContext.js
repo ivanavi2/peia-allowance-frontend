@@ -11,6 +11,7 @@ export const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
+    const [isLoadingSignIn, setIsLoadingSignIn] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || "/";
@@ -28,9 +29,10 @@ export const AuthProvider = ({ children }) => {
         onSuccess: ({ teacher }) => setUser({ ...user, ...teacher }),
     });
 
-    let isLoading = isLoadingTeacher || isLoadingUser;
+    let isLoading = isLoadingTeacher || isLoadingUser || isLoadingSignIn;
 
     const signIn = async (login, password) => {
+        setIsLoadingSignIn(true);
         try {
             const {
                 data: { token, user },
@@ -45,7 +47,7 @@ export const AuthProvider = ({ children }) => {
             } else {
                 setUser(user);
             }
-
+            setIsLoadingSignIn(false);
             navigate(from, { replace: true });
         } catch (error) {
             if (error.response) {
@@ -59,6 +61,7 @@ export const AuthProvider = ({ children }) => {
                     detail: "Please try again later",
                 });
             }
+            setIsLoadingSignIn(false);
         }
     };
 

@@ -10,7 +10,7 @@ import useAuth from "../../CustomHooks/useAuth";
 
 const LoginForm = () => {
     const toastRef = useRef(null);
-    const { signIn, error } = useAuth();
+    const { signIn, error, isLoading } = useAuth();
 
     const {
         control,
@@ -62,7 +62,7 @@ const LoginForm = () => {
                         {errors?.password && <small className="p-error">{errors.password}</small>}
                     </div>
                     <div className=" my-2 ml-2">
-                        <Button label="Submit" type="submit"></Button>
+                        <Button label="Submit" type="submit" loading={isLoading}></Button>
                     </div>
                 </div>
             </form>
