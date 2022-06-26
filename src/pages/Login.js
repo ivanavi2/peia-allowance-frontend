@@ -7,6 +7,7 @@ import LoginForm from "../components/Login/LoginForm";
 const Login = () => {
     return (
         <div className="w-screen h-screen flex justify-content-center align-items-center flex-column">
+            <h1>PEIA Allowance Management</h1>
             <Card style={{ width: "70vw" }}>
                 <div className="grid">
                     <div className="hidden sm:block col-6">
